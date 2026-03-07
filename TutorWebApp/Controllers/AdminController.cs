@@ -27,7 +27,7 @@ namespace TutorApi.Controllers
         /// <summary>
         /// Создать нового ученика (только админ)
         /// </summary>
-        [HttpPost("users")]
+        [HttpPost("createuser")]
         public async Task<IActionResult> CreateUser(CreateUserRequest request)
         {
             // Проверяем, не занят ли логин

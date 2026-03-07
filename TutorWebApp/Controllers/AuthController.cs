@@ -44,14 +44,6 @@ namespace TutorApi.Controllers
         }
 
         /// <summary>
-        /// Простая проверка контроллера
-        /// </summary>
-        public String OK()
-        {
-            return "OK";
-        }
-
-        /// <summary>
         /// Простая проверка - просто возвращает 200 если авторизован
         /// </summary>
         [HttpGet("ping")]
