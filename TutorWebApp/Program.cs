@@ -10,6 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// 👇 ДОБАВЛЯЕМ CORS С РАЗРЕШЕНИЕМ null (для file://)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()  // Разрешает любые источники, включая null
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // ДОБАВЛЯЕМ SWAGGER
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -75,6 +86,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
+app.UseCors("AllowAll");  
 
 // 👇 ВКЛЮЧАЕМ SWAGGER В РАЗРАБОТКЕ
 if (app.Environment.IsDevelopment())
