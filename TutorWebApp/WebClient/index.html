@@ -471,7 +471,7 @@
         <div id="createForm" class="lesson-form hidden" style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
             <h2>Новый урок</h2>
             <input type="text" id="lessonTitle" placeholder="Название урока">
-            <textarea id="lessonContent"
+            <textarea id="lessonContentInput"
                 placeholder="Содержание урока (можно использовать HTML теги: &lt;h1&gt;, &lt;p&gt;, &lt;code&gt;, &lt;pre&gt; и т.д.)"></textarea>
             <input type="text" id="lessonMeetingLink" placeholder="Ссылка на телемост (необязательно)">
             <label>
@@ -716,7 +716,7 @@
         // Создать новый урок
         async function createLesson() {
             const title = document.getElementById('lessonTitle').value;
-            const content = document.getElementById('lessonContent').value;
+            const content = document.getElementById('lessonContentInput').value;
             const meetingLink = document.getElementById('lessonMeetingLink').value;
             const isPublished = document.getElementById('lessonPublished').checked;
 
@@ -934,37 +934,84 @@
                 return;
             }
 
-            list.innerHTML = lessons.map(lesson => `
-                <div class="lesson-item ${selectedLessonId === lesson.id ? 'selected' : ''}" onclick="loadLesson(${lesson.id})">
-                    <h3>${lesson.title}</h3>
-                    <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
-                    ${currentUser?.role === 'admin' ? `
-                        <button class="admin-btn delete" style="margin-top: 10px;" onclick="event.stopPropagation(); deleteLesson(${lesson.id})">
-                            Удалить
-                        </button>
-                    ` : ''}
-                </div>
-            `).join('');
-        }
+            let html = '';
+            for (let i = 0; i < lessons.length; i++) {
+                const lesson = lessons[i];
+                const selectedClass = selectedLessonId === lesson.id ? 'selected' : '';
 
+                html += `
+            <div class="lesson-item ${selectedClass}" data-lesson-id="${lesson.id}">
+                <h3>${lesson.title}</h3>
+                <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
+        `;
+
+                if (currentUser?.role === 'admin') {
+                    html += `
+                <button class="admin-btn delete delete-lesson-btn" data-id="${lesson.id}">
+                    Удалить
+                </button>
+            `;
+                }
+
+                html += `</div>`;
+            }
+
+            list.innerHTML = html;
+
+            // Добавляем обработчики клика на весь элемент урока
+            document.querySelectorAll('.lesson-item').forEach(item => {
+                item.addEventListener('click', function (e) {
+                    // Если кликнули не на кнопку удаления
+                    if (!e.target.classList.contains('delete-lesson-btn')) {
+                        const lessonId = this.dataset.lessonId;
+                        if (lessonId) {
+                            loadLesson(parseInt(lessonId));
+                        }
+                    }
+                });
+            });
+
+            // Добавляем обработчики на кнопки удаления отдельно
+            document.querySelectorAll('.delete-lesson-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation(); // Останавливаем всплытие события
+                    const lessonId = this.dataset.id;
+                    if (lessonId) {
+                        deleteLesson(parseInt(lessonId));
+                    }
+                });
+            });
+        }
         // Отрендерить содержимое урока
         function renderLessonContent(lesson) {
             const content = document.getElementById('lessonContent');
 
-            content.innerHTML = `
-                <h2>${lesson.title}</h2>
-                <div class="content">${lesson.content}</div>
-                ${lesson.meetingLink ? `
-                    <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
-                ` : ''}
-                <div class="lesson-meta">
-                    Автор: ${lesson.authorName}<br>
-                    Создано: ${new Date(lesson.createdAt).toLocaleString()}
-                    ${lesson.updatedAt ? `<br>Обновлено: ${new Date(lesson.updatedAt).toLocaleString()}` : ''}
-                </div>
-            `;
-        }
+            let html = `
+        <h2>${lesson.title}</h2>
+        <div class="content">${lesson.content}</div>
+    `;
 
+            if (lesson.meetingLink) {
+                html += `
+            <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
+        `;
+            }
+
+            html += `
+        <div class="lesson-meta">
+            Автор: ${lesson.authorName}<br>
+            Создано: ${new Date(lesson.createdAt).toLocaleString()}
+    `;
+
+            if (lesson.updatedAt) {
+                html += `<br>Обновлено: ${new Date(lesson.updatedAt).toLocaleString()}`;
+            }
+
+            html += `</div>`;
+
+            content.innerHTML = html;
+            console.log(content)
+        }
         // Отрендерить список учеников
         function renderStudentsList() {
             const list = document.getElementById('studentsList');
