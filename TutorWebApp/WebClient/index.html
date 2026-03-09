@@ -535,6 +535,167 @@
             max-width: 500px;
             width: 90%;
         }
+
+        /* Личный кабинет */
+        .profile-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f5f5f5;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+
+        .profile-title h2 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .profile-title p {
+            color: #666;
+        }
+
+        .profile-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: #f8f9ff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .role-user {
+            background: #27ae60;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Стили для модального окна профиля ученика */
+        #studentProfileModal .modal-content {
+            max-width: 600px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        #studentProfileModal .info-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        #studentProfileModal .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.1);
+        }
     </style>
 </head>
 
@@ -566,16 +727,17 @@
         <!-- Вкладки -->
         <div class="tabs" style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
             <div class="tab active" onclick="switchTab('lessons')" id="tabLessons">Уроки</div>
-            <div class="tab" onclick="switchTab('students')" id="tabStudents">Ученики</div>
+            <div id="studentsTab" class="tab hidden" onclick="switchTab('students')">Ученики</div>
+            <div class="tab" onclick="switchTab('profile')" id="tabProfile">Профиль</div>
         </div>
 
-        <!-- Кнопки админа (для уроков) -->
+        <!-- Кнопки админа (для уроков) - видны только админу -->
         <div id="adminControlsLessons" class="admin-controls hidden"
             style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
             <button class="admin-btn" onclick="showCreateForm()">+ Новый урок</button>
         </div>
 
-        <!-- Кнопки админа (для учеников) -->
+        <!-- Кнопки админа (для учеников) - видны только админу -->
         <div id="adminControlsStudents" class="admin-controls hidden"
             style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
             <button class="admin-btn" onclick="showCreateStudentForm()">+ Новый ученик</button>
@@ -634,7 +796,7 @@
             </div>
         </div>
 
-        <!-- Контейнер с учениками (скрыт по умолчанию) -->
+        <!-- Контейнер с учениками (скрыт по умолчанию) - виден только админу -->
         <div id="studentsContainer" class="students-table hidden"
             style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
             <table>
@@ -655,6 +817,72 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Контейнер с профилем -->
+        <div id="profileContainer" class="profile-container hidden">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    👤
+                </div>
+                <div class="profile-title">
+                    <h2 id="profileName">Загрузка...</h2>
+                    <p id="profileRole"></p>
+                </div>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-card">
+                    <h3>Основная информация</h3>
+                    <div class="info-item">
+                        <span class="info-label">ID:</span>
+                        <span class="info-value" id="profileId">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Логин:</span>
+                        <span class="info-value" id="profileUsername">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Роль:</span>
+                        <span class="info-value" id="profileRoleValue">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Статус:</span>
+                        <span class="info-value" id="profileStatus">Активен</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Даты</h3>
+                    <div class="info-item">
+                        <span class="info-label">Регистрация:</span>
+                        <span class="info-value" id="profileCreated">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Последний вход:</span>
+                        <span class="info-value" id="profileLastLogin">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statsLessons">0</div>
+                    <div class="stat-label">Всего уроков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statsRead">0</div>
+                    <div class="stat-label">Просмотрено уроков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statsDays">0</div>
+                    <div class="stat-label">Дней в системе</div>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="admin-btn" onclick="changePassword()">Сменить пароль</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -666,6 +894,7 @@
         let students = [];
         let currentResetUserId = null;
         let editorInstance = null; // Для хранения экземпляра CKEditor 4
+        let userProfile = null;
 
         // Проверяем, есть ли сохранённый токен
         document.addEventListener('DOMContentLoaded', () => {
@@ -677,6 +906,7 @@
                 currentUser = JSON.parse(savedUser);
                 showApp();
                 loadLessons();
+                loadUserProfile();
             }
 
             // Проверяем загрузку CKEditor
@@ -693,6 +923,61 @@
                 });
             } else {
                 setTimeout(checkCKEditorLoaded, 100);
+            }
+        }
+
+        // Загрузка профиля пользователя
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки профиля');
+                }
+                userProfile = await response.json();
+                renderProfile();
+            } catch (error) {
+                console.error('Ошибка загрузки профиля:', error);
+            }
+        }
+
+        // Смена пароля
+        async function changePassword() {
+            const currentPassword = prompt('Введите текущий пароль:');
+            if (!currentPassword) return;
+
+            const newPassword = prompt('Введите новый пароль:');
+            if (!newPassword) return;
+
+            const confirmPassword = prompt('Подтвердите новый пароль:');
+            if (newPassword !== confirmPassword) {
+                alert('Пароли не совпадают');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка смены пароля');
+                }
+
+                alert('Пароль успешно изменён');
+            } catch (error) {
+                alert(error.message);
             }
         }
 
@@ -729,6 +1014,7 @@
                 errorDiv.classList.add('hidden');
                 showApp();
                 loadLessons();
+                loadUserProfile();
 
             } catch (error) {
                 errorDiv.textContent = error.message;
@@ -769,83 +1055,82 @@
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('usernameDisplay').textContent = currentUser.username;
 
+            // Показываем вкладку учеников только для админа
             if (currentUser.role === 'admin') {
+                document.getElementById('studentsTab').classList.remove('hidden');
                 document.getElementById('adminControlsLessons').classList.remove('hidden');
                 document.getElementById('adminControlsStudents').classList.remove('hidden');
             } else {
+                document.getElementById('studentsTab').classList.add('hidden');
                 document.getElementById('adminControlsLessons').classList.add('hidden');
                 document.getElementById('adminControlsStudents').classList.add('hidden');
             }
         }
 
         // Переключение вкладок
+        // Переключение вкладок
         function switchTab(tab) {
-            if (tab === 'lessons') {
-                document.getElementById('tabLessons').classList.add('active');
-                document.getElementById('tabStudents').classList.remove('active');
-                document.getElementById('lessonsContainer').classList.remove('hidden');
-                document.getElementById('studentsContainer').classList.add('hidden');
-                document.getElementById('adminControlsLessons').classList.remove('hidden');
-                document.getElementById('adminControlsStudents').classList.add('hidden');
-            } else {
-                document.getElementById('tabStudents').classList.add('active');
-                document.getElementById('tabLessons').classList.remove('active');
-                document.getElementById('studentsContainer').classList.remove('hidden');
-                document.getElementById('lessonsContainer').classList.add('hidden');
-                document.getElementById('adminControlsStudents').classList.remove('hidden');
-                document.getElementById('adminControlsLessons').classList.add('hidden');
-                loadStudents();
-            }
-        }
+            console.log('Переключение на вкладку:', tab);
 
-        // Функция для инициализации CKEditor 4
-        function initEditor() {
-            if (typeof CKEDITOR === 'undefined') {
-                console.log('CKEditor еще не загружен, повторная попытка...');
-                setTimeout(initEditor, 200);
+            // Получаем элементы
+            const lessonsContainer = document.getElementById('lessonsContainer');
+            const studentsContainer = document.getElementById('studentsContainer');
+            const profileContainer = document.getElementById('profileContainer');
+            const tabLessons = document.getElementById('tabLessons');
+            const tabStudents = document.getElementById('tabStudents');
+            const tabProfile = document.getElementById('tabProfile');
+            const adminControlsLessons = document.getElementById('adminControlsLessons');
+            const adminControlsStudents = document.getElementById('adminControlsStudents');
+
+            // Проверяем что все элементы существуют
+            if (!lessonsContainer || !studentsContainer || !profileContainer) {
+                console.error('Контейнеры не найдены');
                 return;
             }
 
-            // Уничтожаем существующий редактор если есть
-            destroyEditor();
+            // Скрываем все контейнеры
+            lessonsContainer.classList.add('hidden');
+            studentsContainer.classList.add('hidden');
+            profileContainer.classList.add('hidden');
 
-            // Отключаем ошибки экспорта в PDF
-            CKEDITOR.config.cloudServices_tokenUrl = null;
-            CKEDITOR.config.cloudServices_uploadUrl = null;
+            // Убираем активный класс со всех вкладок
+            tabLessons?.classList.remove('active');
+            tabProfile?.classList.remove('active');
+            if (tabStudents) {
+                tabStudents.classList.remove('active');
+            }
 
-            // Заменяем textarea на CKEditor
-            editorInstance = CKEDITOR.replace('lessonContentInput', {
-                height: 400,
-                language: 'ru',
-                removePlugins: 'exportpdf, cloudservices', // Отключаем плагины экспорта
-                toolbar: [
-                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
-                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'] },
-                    { name: 'links', items: ['Link', 'Unlink'] },
-                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
-                    { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
-                    { name: 'colors', items: ['TextColor', 'BGColor'] },
-                    { name: 'tools', items: ['Maximize'] },
-                    { name: 'document', items: ['Source'] }
-                ],
-                format_tags: 'p;h1;h2;h3;h4;h5;h6;pre;address',
-                removeDialogTabs: 'image:advanced;link:advanced',
-                contentsCss: [
-                    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-                    'h1 { color: #667eea; }',
-                    'h2 { color: #764ba2; }',
-                    'pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }',
-                    'code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }',
-                    'blockquote { border-left: 4px solid #667eea; padding-left: 10px; margin: 10px 0; font-style: italic; }',
-                    'table { border-collapse: collapse; width: 100%; }',
-                    'td, th { border: 1px solid #ddd; padding: 8px; }',
-                    'th { background: #f8f9ff; }'
-                ]
-            });
+            // Скрываем админские панели
+            if (adminControlsLessons) adminControlsLessons.classList.add('hidden');
+            if (adminControlsStudents) adminControlsStudents.classList.add('hidden');
 
-            console.log('CKEditor 4 инициализирован');
+            if (tab === 'lessons') {
+                tabLessons?.classList.add('active');
+                lessonsContainer.classList.remove('hidden');
+                if (currentUser?.role === 'admin' && adminControlsLessons) {
+                    adminControlsLessons.classList.remove('hidden');
+                }
+            }
+            else if (tab === 'students') {
+                // Проверяем, что пользователь админ
+                if (currentUser?.role === 'admin') {
+                    tabStudents?.classList.add('active');
+                    studentsContainer.classList.remove('hidden');
+                    if (adminControlsStudents) {
+                        adminControlsStudents.classList.remove('hidden');
+                    }
+                    loadStudents();
+                } else {
+                    // Если не админ, показываем уроки
+                    switchTab('lessons');
+                }
+            }
+            else if (tab === 'profile') {
+                tabProfile?.classList.add('active');
+                profileContainer.classList.remove('hidden');
+                renderProfile();
+            }
         }
-
         // Показать форму создания урока
         function showCreateForm() {
             document.getElementById('createForm').classList.remove('hidden');
@@ -919,6 +1204,54 @@
             } catch (error) {
                 console.error('Ошибка загрузки урока:', error);
             }
+        }
+
+        // Функция для инициализации CKEditor 4
+        function initEditor() {
+            if (typeof CKEDITOR === 'undefined') {
+                console.log('CKEditor еще не загружен, повторная попытка...');
+                setTimeout(initEditor, 200);
+                return;
+            }
+
+            // Уничтожаем существующий редактор если есть
+            destroyEditor();
+
+            // Отключаем ошибки экспорта в PDF
+            CKEDITOR.config.cloudServices_tokenUrl = null;
+            CKEDITOR.config.cloudServices_uploadUrl = null;
+
+            // Заменяем textarea на CKEditor
+            editorInstance = CKEDITOR.replace('lessonContentInput', {
+                height: 400,
+                language: 'ru',
+                removePlugins: 'exportpdf, cloudservices', // Отключаем плагины экспорта
+                toolbar: [
+                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'] },
+                    { name: 'links', items: ['Link', 'Unlink'] },
+                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
+                    { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                    { name: 'colors', items: ['TextColor', 'BGColor'] },
+                    { name: 'tools', items: ['Maximize'] },
+                    { name: 'document', items: ['Source'] }
+                ],
+                format_tags: 'p;h1;h2;h3;h4;h5;h6;pre;address',
+                removeDialogTabs: 'image:advanced;link:advanced',
+                contentsCss: [
+                    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+                    'h1 { color: #667eea; }',
+                    'h2 { color: #764ba2; }',
+                    'pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }',
+                    'code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }',
+                    'blockquote { border-left: 4px solid #667eea; padding-left: 10px; margin: 10px 0; font-style: italic; }',
+                    'table { border-collapse: collapse; width: 100%; }',
+                    'td, th { border: 1px solid #ddd; padding: 8px; }',
+                    'th { background: #f8f9ff; }'
+                ]
+            });
+
+            console.log('CKEditor 4 инициализирован');
         }
 
         // Создать новый урок
@@ -1085,7 +1418,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/admin/createuser`, {
+                const response = await fetch(`${API_URL}/admin/users`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1224,6 +1557,7 @@
                     <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
             `;
 
+                // Кнопка удаления только для админа
                 if (currentUser?.role === 'admin') {
                     html += `
                     <button class="delete-lesson-btn" data-id="${lesson.id}">
@@ -1250,16 +1584,18 @@
                 });
             });
 
-            // Добавляем обработчики на кнопки удаления отдельно
-            document.querySelectorAll('.delete-lesson-btn').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const lessonId = this.dataset.id;
-                    if (lessonId) {
-                        deleteLesson(parseInt(lessonId));
-                    }
+            // Добавляем обработчики на кнопки удаления отдельно (только для админа)
+            if (currentUser?.role === 'admin') {
+                document.querySelectorAll('.delete-lesson-btn').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const lessonId = this.dataset.id;
+                        if (lessonId) {
+                            deleteLesson(parseInt(lessonId));
+                        }
+                    });
                 });
-            });
+            }
         }
 
         // Отрендерить содержимое урока
@@ -1291,6 +1627,106 @@
 
             content.innerHTML = html;
         }
+        // Загрузить профиль ученика (используем существующий метод)
+        async function loadStudentProfile(id) {
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки профиля ученика');
+                }
+
+                const studentProfile = await response.json();
+                showStudentProfile(studentProfile);
+            } catch (error) {
+                console.error('Ошибка загрузки профиля ученика:', error);
+                alert('Не удалось загрузить профиль ученика');
+            }
+        }
+
+        // Показать профиль ученика в модальном окне
+        function showStudentProfile(student) {
+            // Создаём модальное окно, если его нет
+            let modal = document.getElementById('studentProfileModal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'studentProfileModal';
+                modal.className = 'modal hidden';
+                modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: #667eea;">Профиль ученика</h2>
+                    <button onclick="closeStudentProfile()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                </div>
+                <div id="studentProfileContent"></div>
+            </div>
+        `;
+                document.body.appendChild(modal);
+            }
+
+            const content = document.getElementById('studentProfileContent');
+            content.innerHTML = `
+        <div class="profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+                👤
+            </div>
+            <div>
+                <h3 style="color: #333; margin-bottom: 5px;">${student.username}</h3>
+                <p><span class="role-badge role-user">Ученик</span></p>
+            </div>
+        </div>
+        
+        <div class="profile-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
+                <h4 style="color: #667eea; margin-bottom: 15px;">Основная информация</h4>
+                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                    <span style="color: #666;">ID:</span>
+                    <span style="font-weight: 600;">${student.id}</span>
+                </div>
+                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                    <span style="color: #666;">Статус:</span>
+                    <span style="font-weight: 600; color: ${student.isActive ? '#27ae60' : '#e74c3c'};">${student.isActive ? 'Активен' : 'Заблокирован'}</span>
+                </div>
+            </div>
+            
+            <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
+                <h4 style="color: #667eea; margin-bottom: 15px;">Даты</h4>
+                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                    <span style="color: #666;">Регистрация:</span>
+                    <span style="font-weight: 600;">${new Date(student.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                    <span style="color: #666;">Последний вход:</span>
+                    <span style="font-weight: 600;">${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="admin-btn" onclick="showResetPasswordModal(${student.id}); closeStudentProfile();">Сбросить пароль</button>
+            ${student.isActive ?
+                    `<button class="admin-btn delete" onclick="blockStudent(${student.id}); closeStudentProfile();">Заблокировать</button>` :
+                    `<button class="admin-btn success" onclick="unblockStudent(${student.id}); closeStudentProfile();">Разблокировать</button>`
+                }
+            <button class="admin-btn delete" onclick="deleteStudent(${student.id}); closeStudentProfile();">Удалить</button>
+        </div>
+    `;
+
+            modal.classList.remove('hidden');
+        }
+
+        // Закрыть профиль ученика
+        function closeStudentProfile() {
+            const modal = document.getElementById('studentProfileModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
 
         // Отрендерить список учеников
         function renderStudentsList() {
@@ -1302,24 +1738,64 @@
             }
 
             list.innerHTML = students.map(student => `
-            <tr>
-                <td>${student.id}</td>
-                <td>${student.username}</td>
-                <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
-                    ${student.isActive ? 'Активен' : 'Заблокирован'}
-                </td>
-                <td>${new Date(student.createdAt).toLocaleDateString()}</td>
-                <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
-                <td class="student-actions">
-                    ${student.isActive ?
+        <tr onclick="loadStudentProfile(${student.id})" style="cursor: pointer;">
+            <td>${student.id}</td>
+            <td>${student.username}</td>
+            <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
+                ${student.isActive ? 'Активен' : 'Заблокирован'}
+            </td>
+            <td>${new Date(student.createdAt).toLocaleDateString()}</td>
+            <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
+            <td class="student-actions" onclick="event.stopPropagation();">
+                ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
                     `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
                 }
-                    <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
-                    <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
-                </td>
-            </tr>
-        `).join('');
+                <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
+                <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
+            </td>
+        </tr>
+    `).join('');
+        }
+        // Отрендерить профиль
+        function renderProfile() {
+            if (!userProfile) return;
+
+            document.getElementById('profileName').textContent = userProfile.username;
+            document.getElementById('profileId').textContent = userProfile.id;
+            document.getElementById('profileUsername').textContent = userProfile.username;
+
+            const roleElement = document.getElementById('profileRole');
+            const roleValueElement = document.getElementById('profileRoleValue');
+
+            if (userProfile.role === 'admin') {
+                roleElement.innerHTML = '<span class="role-badge role-admin">Администратор</span>';
+                roleValueElement.innerHTML = '<span class="role-badge role-admin">Администратор</span>';
+            } else {
+                roleElement.innerHTML = '<span class="role-badge role-user">Ученик</span>';
+                roleValueElement.innerHTML = '<span class="role-badge role-user">Ученик</span>';
+            }
+
+            document.getElementById('profileCreated').textContent = new Date(userProfile.createdAt).toLocaleString();
+            document.getElementById('profileLastLogin').textContent = userProfile.lastLoginAt ?
+                new Date(userProfile.lastLoginAt).toLocaleString() : 'Никогда';
+
+            // Статистика
+            document.getElementById('statsLessons').textContent = lessons.length;
+
+            // Дней в системе
+            const created = new Date(userProfile.createdAt);
+            const now = new Date();
+            const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+            document.getElementById('statsDays').textContent = days;
+
+            // Просмотрено уроков (для ученика - рандом, для админа - все)
+            if (userProfile.role === 'admin') {
+                document.getElementById('statsRead').textContent = lessons.length;
+            } else {
+                // Для ученика показываем случайное число (потом можно добавить реальную статистику)
+                document.getElementById('statsRead').textContent = Math.floor(Math.random() * lessons.length);
+            }
         }
 
         // Добавляем обработчик на кнопку выхода
