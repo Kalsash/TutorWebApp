@@ -7,6 +7,17 @@
     <title>Репетитор по информатике</title>
     <!-- CKEditor 4 локальный -->
     <script src="./ckeditor/ckeditor.js"></script>
+    <!-- Prism.js для подсветки синтаксиса -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -150,19 +161,26 @@
             height: auto;
         }
 
+        /* Стили для кода с Prism.js */
         .lesson-content .content pre {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Courier New', monospace;
+            margin: 20px 0 !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
         }
 
         .lesson-content .content code {
-            background: #f5f5f5;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            background: none !important;
+        }
+
+        .lesson-content .content :not(pre)>code {
+            background: #f0f0f0 !important;
+            color: #e74c3c !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            font-size: 0.9em !important;
         }
 
         .meeting-link {
@@ -313,18 +331,18 @@
         }
 
         .cke_editable pre {
-            background: #f5f5f5;
+            background: #1e1e1e;
+            color: #d4d4d4;
             padding: 1rem;
             border-radius: 8px;
             overflow-x: auto;
-            font-family: 'Courier New', monospace;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
         }
 
         .cke_editable code {
-            background: #f5f5f5;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            background: none;
+            padding: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
         }
 
         .cke_editable blockquote {
@@ -534,6 +552,8 @@
             border-radius: 10px;
             max-width: 500px;
             width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         /* Личный кабинет */
@@ -696,6 +716,82 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(102, 126, 234, 0.1);
         }
+
+        /* Модальное окно для кода */
+        #codeModal .modal-content {
+            max-width: 800px;
+        }
+
+        #codeModal select,
+        #codeModal textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        #codeModal textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        /* Секция файлов */
+        .lesson-files {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .lesson-files h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .file-item:hover {
+            background: #e8eaff;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 600;
+        }
+
+        .file-meta {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
     </style>
 </head>
 
@@ -735,6 +831,7 @@
         <div id="adminControlsLessons" class="admin-controls hidden"
             style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
             <button class="admin-btn" onclick="showCreateForm()">+ Новый урок</button>
+            <button class="admin-btn" onclick="showUploadFileModal()">📎 Загрузить файл</button>
         </div>
 
         <!-- Кнопки админа (для учеников) - видны только админу -->
@@ -782,6 +879,49 @@
             </div>
         </div>
 
+        <!-- Модальное окно для вставки кода -->
+        <div id="codeModal" class="modal hidden">
+            <div class="modal-content">
+                <h3 style="margin-bottom: 20px;">Вставка кода</h3>
+                <select id="codeLanguage" style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                    <option value="python">Python</option>
+                    <option value="csharp">C#</option>
+                    <option value="java">Java</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="cpp">C++</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="sql">SQL</option>
+                    <option value="bash">Bash</option>
+                    <option value="json">JSON</option>
+                </select>
+                <textarea id="codeInput" rows="10" placeholder="Введите ваш код здесь..."></textarea>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="admin-btn" onclick="insertCode()">Вставить</button>
+                    <button class="admin-btn delete" onclick="closeCodeModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно загрузки файла -->
+        <div id="uploadFileModal" class="modal hidden">
+            <div class="modal-content" style="max-width: 500px;">
+                <h3 style="margin-bottom: 20px;">Загрузка файла</h3>
+                <select id="fileLessonSelect" style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                    <option value="">Без привязки к уроку</option>
+                </select>
+                <input type="file" id="fileInput"
+                    style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="admin-btn" onclick="uploadFile()">Загрузить</button>
+                    <button class="admin-btn delete" onclick="closeUploadFileModal()">Отмена</button>
+                </div>
+                <div id="uploadProgress" style="margin-top: 10px; display: none;">
+                    <progress value="0" max="100" style="width: 100%;"></progress>
+                </div>
+            </div>
+        </div>
+
         <!-- Контейнер с уроками -->
         <div id="lessonsContainer" class="container">
             <!-- Левая колонка - список уроков -->
@@ -793,6 +933,7 @@
             <!-- Правая колонка - содержимое урока -->
             <div class="lesson-content" id="lessonContent">
                 <p>Выберите урок из списка</p>
+                <!-- Секция файлов будет добавлена сюда динамически -->
             </div>
         </div>
 
@@ -893,10 +1034,10 @@
         let selectedLessonId = null;
         let students = [];
         let currentResetUserId = null;
-        let editorInstance = null; // Для хранения экземпляра CKEditor 4
+        let editorInstance = null;
         let userProfile = null;
+        let currentLessonFiles = [];
 
-        // Проверяем, есть ли сохранённый токен
         document.addEventListener('DOMContentLoaded', () => {
             const savedToken = localStorage.getItem('token');
             const savedUser = localStorage.getItem('user');
@@ -909,15 +1050,12 @@
                 loadUserProfile();
             }
 
-            // Проверяем загрузку CKEditor
             checkCKEditorLoaded();
         });
 
-        // Проверка загрузки CKEditor
         function checkCKEditorLoaded() {
             if (typeof CKEDITOR !== 'undefined') {
                 console.log('CKEditor 4 загружен');
-                // Отключаем ошибки экспорта в PDF
                 CKEDITOR.on('instanceLoaded', function () {
                     console.log('CKEditor 4 готов к работе');
                 });
@@ -926,7 +1064,6 @@
             }
         }
 
-        // Загрузка профиля пользователя
         async function loadUserProfile() {
             try {
                 const response = await fetch(`${API_URL}/auth/me`, {
@@ -944,7 +1081,6 @@
             }
         }
 
-        // Смена пароля
         async function changePassword() {
             const currentPassword = prompt('Введите текущий пароль:');
             if (!currentPassword) return;
@@ -981,7 +1117,6 @@
             }
         }
 
-        // Вход в систему
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -1007,7 +1142,6 @@
                     role: data.role
                 };
 
-                // Сохраняем в localStorage
                 localStorage.setItem('token', token);
                 localStorage.setItem('user', JSON.stringify(currentUser));
 
@@ -1022,7 +1156,6 @@
             }
         }
 
-        // Выход из системы
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -1031,12 +1164,9 @@
             document.getElementById('loginContainer').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
-
-            // Уничтожаем редактор при выходе
             destroyEditor();
         }
 
-        // Уничтожение редактора
         function destroyEditor() {
             try {
                 if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
@@ -1048,14 +1178,12 @@
             editorInstance = null;
         }
 
-        // Показать основное приложение
         function showApp() {
             document.getElementById('loginContainer').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('usernameDisplay').textContent = currentUser.username;
 
-            // Показываем вкладку учеников только для админа
             if (currentUser.role === 'admin') {
                 document.getElementById('studentsTab').classList.remove('hidden');
                 document.getElementById('adminControlsLessons').classList.remove('hidden');
@@ -1067,12 +1195,9 @@
             }
         }
 
-        // Переключение вкладок
-        // Переключение вкладок
         function switchTab(tab) {
             console.log('Переключение на вкладку:', tab);
 
-            // Получаем элементы
             const lessonsContainer = document.getElementById('lessonsContainer');
             const studentsContainer = document.getElementById('studentsContainer');
             const profileContainer = document.getElementById('profileContainer');
@@ -1082,25 +1207,21 @@
             const adminControlsLessons = document.getElementById('adminControlsLessons');
             const adminControlsStudents = document.getElementById('adminControlsStudents');
 
-            // Проверяем что все элементы существуют
             if (!lessonsContainer || !studentsContainer || !profileContainer) {
                 console.error('Контейнеры не найдены');
                 return;
             }
 
-            // Скрываем все контейнеры
             lessonsContainer.classList.add('hidden');
             studentsContainer.classList.add('hidden');
             profileContainer.classList.add('hidden');
 
-            // Убираем активный класс со всех вкладок
             tabLessons?.classList.remove('active');
             tabProfile?.classList.remove('active');
             if (tabStudents) {
                 tabStudents.classList.remove('active');
             }
 
-            // Скрываем админские панели
             if (adminControlsLessons) adminControlsLessons.classList.add('hidden');
             if (adminControlsStudents) adminControlsStudents.classList.add('hidden');
 
@@ -1112,7 +1233,6 @@
                 }
             }
             else if (tab === 'students') {
-                // Проверяем, что пользователь админ
                 if (currentUser?.role === 'admin') {
                     tabStudents?.classList.add('active');
                     studentsContainer.classList.remove('hidden');
@@ -1121,7 +1241,6 @@
                     }
                     loadStudents();
                 } else {
-                    // Если не админ, показываем уроки
                     switchTab('lessons');
                 }
             }
@@ -1131,7 +1250,7 @@
                 renderProfile();
             }
         }
-        // Показать форму создания урока
+
         function showCreateForm() {
             document.getElementById('createForm').classList.remove('hidden');
             document.getElementById('lessonTitle').value = '';
@@ -1139,45 +1258,228 @@
             document.getElementById('lessonMeetingLink').value = '';
             document.getElementById('lessonPublished').checked = true;
 
-            // Инициализируем редактор с небольшой задержкой
             setTimeout(() => {
                 initEditor();
             }, 300);
         }
 
-        // Скрыть форму создания урока
         function hideCreateForm() {
             document.getElementById('createForm').classList.add('hidden');
-            // Уничтожаем редактор при закрытии формы
             destroyEditor();
         }
 
-        // Показать форму создания ученика
         function showCreateStudentForm() {
             document.getElementById('createStudentForm').classList.remove('hidden');
             document.getElementById('studentUsername').value = '';
             document.getElementById('studentPassword').value = '';
         }
 
-        // Скрыть форму создания ученика
         function hideCreateStudentForm() {
             document.getElementById('createStudentForm').classList.add('hidden');
         }
 
-        // Показать модальное окно сброса пароля
         function showResetPasswordModal(userId) {
             currentResetUserId = userId;
             document.getElementById('resetPasswordModal').classList.remove('hidden');
             document.getElementById('resetPasswordInput').value = '';
         }
 
-        // Закрыть модальное окно
         function closeResetPasswordModal() {
             document.getElementById('resetPasswordModal').classList.add('hidden');
             currentResetUserId = null;
         }
 
-        // Загрузить все уроки
+        function showCodeModal() {
+            document.getElementById('codeModal').classList.remove('hidden');
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').classList.add('hidden');
+            document.getElementById('codeInput').value = '';
+        }
+
+        function showUploadFileModal() {
+            const select = document.getElementById('fileLessonSelect');
+            select.innerHTML = '<option value="">Без привязки к уроку</option>';
+
+            lessons.forEach(lesson => {
+                select.innerHTML += `<option value="${lesson.id}">${lesson.title}</option>`;
+            });
+
+            document.getElementById('uploadFileModal').classList.remove('hidden');
+        }
+
+        function closeUploadFileModal() {
+            document.getElementById('uploadFileModal').classList.add('hidden');
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const lessonId = document.getElementById('fileLessonSelect').value;
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Выберите файл');
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            const allowedExtensions = ['.txt', '.py', '.cs', '.java', '.cpp', '.js', '.html', '.css', '.sql', '.md', '.json', '.xml'];
+            const extension = '.' + file.name.split('.').pop().toLowerCase();
+
+            if (!allowedExtensions.includes(extension)) {
+                alert('Недопустимый тип файла. Разрешены: ' + allowedExtensions.join(', '));
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Файл слишком большой. Максимальный размер: 10 МБ');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            if (lessonId) {
+                formData.append('lessonId', lessonId);
+            }
+
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = progressDiv.querySelector('progress');
+            progressDiv.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/files/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Ошибка загрузки');
+                }
+
+                const result = await response.json();
+                alert('Файл успешно загружен!');
+                closeUploadFileModal();
+
+                if (selectedLessonId) {
+                    loadLessonFiles(selectedLessonId);
+                }
+
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            } finally {
+                progressDiv.style.display = 'none';
+            }
+        }
+
+        async function loadLessonFiles(lessonId) {
+            try {
+                const response = await fetch(`${API_URL}/files/lesson/${lessonId}`);
+                if (!response.ok) return;
+
+                currentLessonFiles = await response.json();
+                displayLessonFiles();
+            } catch (error) {
+                console.error('Ошибка загрузки файлов:', error);
+            }
+        }
+
+        function displayLessonFiles() {
+            const filesDiv = document.getElementById('lessonFiles');
+            if (!filesDiv) return;
+
+            if (!currentLessonFiles || currentLessonFiles.length === 0) {
+                filesDiv.style.display = 'none';
+                return;
+            }
+
+            filesDiv.style.display = 'block';
+
+            let html = '<h3>📎 Прикреплённые файлы</h3>';
+
+            currentLessonFiles.forEach(file => {
+                const size = (file.fileSize / 1024).toFixed(2) + ' KB';
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <div class="file-details">
+                                <div class="file-name">${file.fileName}</div>
+                                <div class="file-meta">${size} • Загружен: ${new Date(file.uploadedAt).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="admin-btn" onclick="downloadFile(${file.id})" style="padding: 5px 10px; font-size: 0.9rem;">Скачать</button>
+                            ${currentUser?.role === 'admin' ? `
+                                <button class="admin-btn delete" onclick="deleteFile(${file.id})" style="padding: 5px 10px; font-size: 0.9rem;">Удалить</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            filesDiv.innerHTML = html;
+        }
+
+        function downloadFile(id) {
+            window.open(`${API_URL}/files/download/${id}`, '_blank');
+        }
+
+        async function deleteFile(id) {
+            if (!confirm('Удалить файл?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/files/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка удаления');
+                }
+
+                if (selectedLessonId) {
+                    loadLessonFiles(selectedLessonId);
+                }
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function insertCode() {
+            const language = document.getElementById('codeLanguage').value;
+            const code = document.getElementById('codeInput').value;
+
+            if (!code) {
+                alert('Введите код');
+                return;
+            }
+
+            const escapedCode = escapeHtml(code);
+            const html = `<pre class="line-numbers"><code class="language-${language}">${escapedCode}</code></pre>`;
+
+            if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
+                CKEDITOR.instances.lessonContentInput.insertHtml(html);
+            }
+
+            closeCodeModal();
+        }
+
         async function loadLessons() {
             try {
                 const response = await fetch(`${API_URL}/lessons`);
@@ -1191,7 +1493,6 @@
             }
         }
 
-        // Загрузить конкретный урок
         async function loadLesson(id) {
             try {
                 const response = await fetch(`${API_URL}/lessons/${id}`);
@@ -1201,12 +1502,18 @@
                 const lesson = await response.json();
                 selectedLessonId = id;
                 renderLessonContent(lesson);
+                loadLessonFiles(id);
+
+                setTimeout(() => {
+                    if (typeof Prism !== 'undefined') {
+                        Prism.highlightAll();
+                    }
+                }, 100);
             } catch (error) {
                 console.error('Ошибка загрузки урока:', error);
             }
         }
 
-        // Функция для инициализации CKEditor 4
         function initEditor() {
             if (typeof CKEDITOR === 'undefined') {
                 console.log('CKEditor еще не загружен, повторная попытка...');
@@ -1214,49 +1521,68 @@
                 return;
             }
 
-            // Уничтожаем существующий редактор если есть
             destroyEditor();
 
-            // Отключаем ошибки экспорта в PDF
             CKEDITOR.config.cloudServices_tokenUrl = null;
             CKEDITOR.config.cloudServices_uploadUrl = null;
 
-            // Заменяем textarea на CKEditor
+            CKEDITOR.config.allowedContent = {
+                $1: {
+                    elements: CKEDITOR.dtd,
+                    attributes: true,
+                    classes: true,
+                    styles: true
+                }
+            };
+
+            CKEDITOR.dtd.$removeEmpty = {};
+
+            CKEDITOR.config.extraAllowedContent = 'pre[class,data-*]; code[class,data-*]; span[class]; div[class]';
+
+            CKEDITOR.plugins.add('codebutton', {
+                init: function (editor) {
+                    editor.ui.addButton('CodeButton', {
+                        label: 'Вставить код',
+                        icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
+                        command: 'showCodeModal',
+                        toolbar: 'insert'
+                    });
+                }
+            });
+
             editorInstance = CKEDITOR.replace('lessonContentInput', {
                 height: 400,
                 language: 'ru',
-                removePlugins: 'exportpdf, cloudservices', // Отключаем плагины экспорта
+                extraPlugins: 'codebutton',
+                removePlugins: 'exportpdf, cloudservices',
+                allowedContent: true,
+                extraAllowedContent: '*(*);*{*}',
+                autoParagraph: false,
+                fillEmptyBlocks: false,
                 toolbar: [
                     { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
                     { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'] },
                     { name: 'links', items: ['Link', 'Unlink'] },
-                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
+                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'CodeButton'] },
                     { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
                     { name: 'colors', items: ['TextColor', 'BGColor'] },
                     { name: 'tools', items: ['Maximize'] },
                     { name: 'document', items: ['Source'] }
                 ],
                 format_tags: 'p;h1;h2;h3;h4;h5;h6;pre;address',
-                removeDialogTabs: 'image:advanced;link:advanced',
-                contentsCss: [
-                    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-                    'h1 { color: #667eea; }',
-                    'h2 { color: #764ba2; }',
-                    'pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }',
-                    'code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }',
-                    'blockquote { border-left: 4px solid #667eea; padding-left: 10px; margin: 10px 0; font-style: italic; }',
-                    'table { border-collapse: collapse; width: 100%; }',
-                    'td, th { border: 1px solid #ddd; padding: 8px; }',
-                    'th { background: #f8f9ff; }'
-                ]
+                removeDialogTabs: 'image:advanced;link:advanced'
             });
 
-            console.log('CKEditor 4 инициализирован');
+            editorInstance.addCommand('showCodeModal', {
+                exec: function () {
+                    showCodeModal();
+                }
+            });
+
+            console.log('CKEditor 4 инициализирован с кнопкой для вставки кода');
         }
 
-        // Создать новый урок
         async function createLesson() {
-            // Проверяем авторизацию
             if (!token) {
                 alert('Сессия истекла. Пожалуйста, войдите заново.');
                 logout();
@@ -1265,7 +1591,6 @@
 
             const title = document.getElementById('lessonTitle').value;
 
-            // Получаем содержимое из CKEditor 4
             let content = '';
             try {
                 if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
@@ -1281,7 +1606,6 @@
             const meetingLink = document.getElementById('lessonMeetingLink').value;
             const isPublished = document.getElementById('lessonPublished').checked;
 
-            // Валидация
             if (!title || !title.trim()) {
                 alert('Введите название урока');
                 return;
@@ -1292,16 +1616,12 @@
                 return;
             }
 
-            // Показываем индикатор загрузки
             const saveBtn = document.querySelector('#createForm .admin-btn');
             const originalText = saveBtn.textContent;
             saveBtn.textContent = 'Сохранение...';
             saveBtn.disabled = true;
 
             try {
-                console.log('Отправка данных:', { title, meetingLink, isPublished });
-                console.log('Token:', token);
-
                 const response = await fetch(`${API_URL}/lessons`, {
                     method: 'POST',
                     headers: {
@@ -1317,7 +1637,6 @@
                     })
                 });
 
-                // Проверяем статус ответа
                 if (response.status === 401) {
                     throw new Error('Ошибка авторизации. Пожалуйста, войдите заново.');
                 }
@@ -1328,7 +1647,6 @@
                 }
 
                 const result = await response.json();
-                console.log('Урок создан:', result);
 
                 hideCreateForm();
                 await loadLessons();
@@ -1338,18 +1656,15 @@
                 console.error('Ошибка создания урока:', error);
                 alert('Ошибка: ' + error.message);
 
-                // Если ошибка авторизации - разлогиниваем
                 if (error.message.includes('авторизации') || error.message.includes('401')) {
                     logout();
                 }
             } finally {
-                // Возвращаем кнопку в исходное состояние
                 saveBtn.textContent = originalText;
                 saveBtn.disabled = false;
             }
         }
 
-        // Удалить урок
         async function deleteLesson(id) {
             if (!confirm('Удалить урок?')) return;
 
@@ -1383,7 +1698,6 @@
             }
         }
 
-        // Загрузить список учеников
         async function loadStudents() {
             try {
                 const response = await fetch(`${API_URL}/admin/users`, {
@@ -1407,7 +1721,6 @@
             }
         }
 
-        // Создать нового ученика
         async function createStudent() {
             const username = document.getElementById('studentUsername').value;
             const password = document.getElementById('studentPassword').value;
@@ -1418,7 +1731,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/admin/users`, {
+                const response = await fetch(`${API_URL}/admin/createuser`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1440,7 +1753,6 @@
             }
         }
 
-        // Заблокировать ученика
         async function blockStudent(id) {
             try {
                 const response = await fetch(`${API_URL}/admin/users/${id}/block`, {
@@ -1461,7 +1773,6 @@
             }
         }
 
-        // Разблокировать ученика
         async function unblockStudent(id) {
             try {
                 const response = await fetch(`${API_URL}/admin/users/${id}/unblock`, {
@@ -1482,7 +1793,6 @@
             }
         }
 
-        // Удалить ученика
         async function deleteStudent(id) {
             if (!confirm('Вы уверены, что хотите удалить ученика? Это действие нельзя отменить.')) return;
 
@@ -1505,7 +1815,6 @@
             }
         }
 
-        // Подтвердить сброс пароля
         async function confirmResetPassword() {
             const newPassword = document.getElementById('resetPasswordInput').value;
 
@@ -1537,7 +1846,6 @@
             }
         }
 
-        // Отрендерить список уроков
         function renderLessonsList() {
             const list = document.getElementById('lessonsList');
 
@@ -1557,7 +1865,6 @@
                     <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
             `;
 
-                // Кнопка удаления только для админа
                 if (currentUser?.role === 'admin') {
                     html += `
                     <button class="delete-lesson-btn" data-id="${lesson.id}">
@@ -1571,10 +1878,8 @@
 
             list.innerHTML = html;
 
-            // Добавляем обработчики клика на весь элемент урока
             document.querySelectorAll('.lesson-item').forEach(item => {
                 item.addEventListener('click', function (e) {
-                    // Если кликнули не на кнопку удаления
                     if (!e.target.classList.contains('delete-lesson-btn')) {
                         const lessonId = this.dataset.lessonId;
                         if (lessonId) {
@@ -1584,7 +1889,6 @@
                 });
             });
 
-            // Добавляем обработчики на кнопки удаления отдельно (только для админа)
             if (currentUser?.role === 'admin') {
                 document.querySelectorAll('.delete-lesson-btn').forEach(btn => {
                     btn.addEventListener('click', function (e) {
@@ -1598,26 +1902,33 @@
             }
         }
 
-        // Отрендерить содержимое урока
         function renderLessonContent(lesson) {
             const content = document.getElementById('lessonContent');
 
+            // Добавляем секцию для файлов, если её нет
+            if (!document.getElementById('lessonFiles')) {
+                const filesDiv = document.createElement('div');
+                filesDiv.id = 'lessonFiles';
+                filesDiv.className = 'lesson-files';
+                content.appendChild(filesDiv);
+            }
+
             let html = `
-            <h2>${lesson.title}</h2>
-            <div class="content">${lesson.content}</div>
-        `;
+                <h2>${lesson.title}</h2>
+                <div class="content">${lesson.content}</div>
+            `;
 
             if (lesson.meetingLink) {
                 html += `
-                <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
-            `;
+                    <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
+                `;
             }
 
             html += `
-            <div class="lesson-meta">
-                Автор: ${lesson.authorName}<br>
-                Создано: ${new Date(lesson.createdAt).toLocaleString()}
-        `;
+                <div class="lesson-meta">
+                    Автор: ${lesson.authorName}<br>
+                    Создано: ${new Date(lesson.createdAt).toLocaleString()}
+            `;
 
             if (lesson.updatedAt) {
                 html += `<br>Обновлено: ${new Date(lesson.updatedAt).toLocaleString()}`;
@@ -1625,9 +1936,13 @@
 
             html += `</div>`;
 
-            content.innerHTML = html;
+            content.innerHTML = html + '<div id="lessonFiles" class="lesson-files"></div>';
+
+            if (typeof Prism !== 'undefined') {
+                Prism.highlightAll();
+            }
         }
-        // Загрузить профиль ученика (используем существующий метод)
+
         async function loadStudentProfile(id) {
             try {
                 const response = await fetch(`${API_URL}/admin/users/${id}`, {
@@ -1648,9 +1963,7 @@
             }
         }
 
-        // Показать профиль ученика в модальном окне
         function showStudentProfile(student) {
-            // Создаём модальное окно, если его нет
             let modal = document.getElementById('studentProfileModal');
 
             if (!modal) {
@@ -1658,69 +1971,68 @@
                 modal.id = 'studentProfileModal';
                 modal.className = 'modal hidden';
                 modal.innerHTML = `
-            <div class="modal-content" style="max-width: 600px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #667eea;">Профиль ученика</h2>
-                    <button onclick="closeStudentProfile()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
-                </div>
-                <div id="studentProfileContent"></div>
-            </div>
-        `;
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 style="color: #667eea;">Профиль ученика</h2>
+                            <button onclick="closeStudentProfile()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                        </div>
+                        <div id="studentProfileContent"></div>
+                    </div>
+                `;
                 document.body.appendChild(modal);
             }
 
             const content = document.getElementById('studentProfileContent');
             content.innerHTML = `
-        <div class="profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
-                👤
-            </div>
-            <div>
-                <h3 style="color: #333; margin-bottom: 5px;">${student.username}</h3>
-                <p><span class="role-badge role-user">Ученик</span></p>
-            </div>
-        </div>
-        
-        <div class="profile-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
-                <h4 style="color: #667eea; margin-bottom: 15px;">Основная информация</h4>
-                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
-                    <span style="color: #666;">ID:</span>
-                    <span style="font-weight: 600;">${student.id}</span>
+                <div class="profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+                        👤
+                    </div>
+                    <div>
+                        <h3 style="color: #333; margin-bottom: 5px;">${student.username}</h3>
+                        <p><span class="role-badge role-user">Ученик</span></p>
+                    </div>
                 </div>
-                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
-                    <span style="color: #666;">Статус:</span>
-                    <span style="font-weight: 600; color: ${student.isActive ? '#27ae60' : '#e74c3c'};">${student.isActive ? 'Активен' : 'Заблокирован'}</span>
+                
+                <div class="profile-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">Основная информация</h4>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                            <span style="color: #666;">ID:</span>
+                            <span style="font-weight: 600;">${student.id}</span>
+                        </div>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                            <span style="color: #666;">Статус:</span>
+                            <span style="font-weight: 600; color: ${student.isActive ? '#27ae60' : '#e74c3c'};">${student.isActive ? 'Активен' : 'Заблокирован'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">Даты</h4>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                            <span style="color: #666;">Регистрация:</span>
+                            <span style="font-weight: 600;">${new Date(student.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                            <span style="color: #666;">Последний вход:</span>
+                            <span style="font-weight: 600;">${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="info-card" style="background: #f8f9ff; padding: 20px; border-radius: 8px;">
-                <h4 style="color: #667eea; margin-bottom: 15px;">Даты</h4>
-                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
-                    <span style="color: #666;">Регистрация:</span>
-                    <span style="font-weight: 600;">${new Date(student.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
-                    <span style="color: #666;">Последний вход:</span>
-                    <span style="font-weight: 600;">${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</span>
-                </div>
-            </div>
-        </div>
-        
-        <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="admin-btn" onclick="showResetPasswordModal(${student.id}); closeStudentProfile();">Сбросить пароль</button>
-            ${student.isActive ?
+                
+                <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="admin-btn" onclick="showResetPasswordModal(${student.id}); closeStudentProfile();">Сбросить пароль</button>
+                    ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id}); closeStudentProfile();">Заблокировать</button>` :
                     `<button class="admin-btn success" onclick="unblockStudent(${student.id}); closeStudentProfile();">Разблокировать</button>`
                 }
-            <button class="admin-btn delete" onclick="deleteStudent(${student.id}); closeStudentProfile();">Удалить</button>
-        </div>
-    `;
+                    <button class="admin-btn delete" onclick="deleteStudent(${student.id}); closeStudentProfile();">Удалить</button>
+                </div>
+            `;
 
             modal.classList.remove('hidden');
         }
 
-        // Закрыть профиль ученика
         function closeStudentProfile() {
             const modal = document.getElementById('studentProfileModal');
             if (modal) {
@@ -1728,7 +2040,6 @@
             }
         }
 
-        // Отрендерить список учеников
         function renderStudentsList() {
             const list = document.getElementById('studentsList');
 
@@ -1738,26 +2049,26 @@
             }
 
             list.innerHTML = students.map(student => `
-        <tr onclick="loadStudentProfile(${student.id})" style="cursor: pointer;">
-            <td>${student.id}</td>
-            <td>${student.username}</td>
-            <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
-                ${student.isActive ? 'Активен' : 'Заблокирован'}
-            </td>
-            <td>${new Date(student.createdAt).toLocaleDateString()}</td>
-            <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
-            <td class="student-actions" onclick="event.stopPropagation();">
-                ${student.isActive ?
+                <tr onclick="loadStudentProfile(${student.id})" style="cursor: pointer;">
+                    <td>${student.id}</td>
+                    <td>${student.username}</td>
+                    <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
+                        ${student.isActive ? 'Активен' : 'Заблокирован'}
+                    </td>
+                    <td>${new Date(student.createdAt).toLocaleDateString()}</td>
+                    <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
+                    <td class="student-actions" onclick="event.stopPropagation();">
+                        ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
                     `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
                 }
-                <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
-                <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
-            </td>
-        </tr>
-    `).join('');
+                        <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
+                        <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
         }
-        // Отрендерить профиль
+
         function renderProfile() {
             if (!userProfile) return;
 
@@ -1780,25 +2091,20 @@
             document.getElementById('profileLastLogin').textContent = userProfile.lastLoginAt ?
                 new Date(userProfile.lastLoginAt).toLocaleString() : 'Никогда';
 
-            // Статистика
             document.getElementById('statsLessons').textContent = lessons.length;
 
-            // Дней в системе
             const created = new Date(userProfile.createdAt);
             const now = new Date();
             const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
             document.getElementById('statsDays').textContent = days;
 
-            // Просмотрено уроков (для ученика - рандом, для админа - все)
             if (userProfile.role === 'admin') {
                 document.getElementById('statsRead').textContent = lessons.length;
             } else {
-                // Для ученика показываем случайное число (потом можно добавить реальную статистику)
                 document.getElementById('statsRead').textContent = Math.floor(Math.random() * lessons.length);
             }
         }
 
-        // Добавляем обработчик на кнопку выхода
         document.getElementById('logoutBtn').onclick = logout;
     </script>
 </body>

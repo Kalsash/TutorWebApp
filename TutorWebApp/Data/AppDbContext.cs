@@ -10,6 +10,8 @@ namespace TutorApi.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
 
+        public DbSet<UploadedFile> UploadedFiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Уникальность Username
