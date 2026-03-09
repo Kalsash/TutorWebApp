@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Репетитор по информатике</title>
+    <!-- CKEditor 4 локальный -->
+    <script src="./ckeditor/ckeditor.js"></script>
     <style>
         * {
             margin: 0;
@@ -65,6 +67,7 @@
             margin-bottom: 10px;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
 
         .lesson-item:hover {
@@ -83,14 +86,43 @@
             color: #eee;
         }
 
+        .lesson-item.selected .delete-lesson-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+        }
+
+        .lesson-item.selected .delete-lesson-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .lesson-item h3 {
             margin: 0 0 5px 0;
             font-size: 1rem;
+            padding-right: 70px;
         }
 
         .lesson-item small {
             color: #666;
             font-size: 0.8rem;
+        }
+
+        .delete-lesson-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .delete-lesson-btn:hover {
+            background: #c0392b;
         }
 
         /* Правая колонка - содержимое урока */
@@ -235,6 +267,89 @@
         .lesson-form input[type="checkbox"] {
             width: auto;
             margin-bottom: 0;
+        }
+
+        /* Стили для CKEditor 4 */
+        .cke_chrome {
+            margin-bottom: 20px !important;
+            border-radius: 8px !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+
+        .cke_inner {
+            border-radius: 8px !important;
+        }
+
+        .cke_top {
+            border-radius: 8px 8px 0 0 !important;
+            background: #f8f9ff !important;
+        }
+
+        .cke_contents {
+            min-height: 400px !important;
+        }
+
+        .cke_editable {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            padding: 15px !important;
+        }
+
+        .cke_editable h1 {
+            font-size: 2rem;
+            color: #667eea;
+            margin: 1rem 0;
+        }
+
+        .cke_editable h2 {
+            font-size: 1.5rem;
+            color: #764ba2;
+            margin: 1rem 0;
+        }
+
+        .cke_editable h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin: 1rem 0;
+        }
+
+        .cke_editable pre {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .cke_editable code {
+            background: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .cke_editable blockquote {
+            border-left: 4px solid #667eea;
+            margin: 1rem 0;
+            padding: 0.5rem 0 0.5rem 1rem;
+            background: #f8f9ff;
+            font-style: italic;
+        }
+
+        .cke_editable table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .cke_editable td,
+        .cke_editable th {
+            border: 1px solid #e0e0e0;
+            padding: 8px;
+        }
+
+        .cke_editable th {
+            background: #f8f9ff;
+            font-weight: 600;
         }
 
         /* Форма входа */
@@ -471,8 +586,8 @@
         <div id="createForm" class="lesson-form hidden" style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
             <h2>Новый урок</h2>
             <input type="text" id="lessonTitle" placeholder="Название урока">
-            <textarea id="lessonContentInput"
-                placeholder="Содержание урока (можно использовать HTML теги: &lt;h1&gt;, &lt;p&gt;, &lt;code&gt;, &lt;pre&gt; и т.д.)"></textarea>
+            <!-- CKEditor 4 будет применён к этому textarea -->
+            <textarea id="lessonContentInput" placeholder="Содержание урока"></textarea>
             <input type="text" id="lessonMeetingLink" placeholder="Ссылка на телемост (необязательно)">
             <label>
                 <input type="checkbox" id="lessonPublished" checked>
@@ -550,6 +665,7 @@
         let selectedLessonId = null;
         let students = [];
         let currentResetUserId = null;
+        let editorInstance = null; // Для хранения экземпляра CKEditor 4
 
         // Проверяем, есть ли сохранённый токен
         document.addEventListener('DOMContentLoaded', () => {
@@ -562,7 +678,23 @@
                 showApp();
                 loadLessons();
             }
+
+            // Проверяем загрузку CKEditor
+            checkCKEditorLoaded();
         });
+
+        // Проверка загрузки CKEditor
+        function checkCKEditorLoaded() {
+            if (typeof CKEDITOR !== 'undefined') {
+                console.log('CKEditor 4 загружен');
+                // Отключаем ошибки экспорта в PDF
+                CKEDITOR.on('instanceLoaded', function () {
+                    console.log('CKEditor 4 готов к работе');
+                });
+            } else {
+                setTimeout(checkCKEditorLoaded, 100);
+            }
+        }
 
         // Вход в систему
         async function login() {
@@ -613,6 +745,21 @@
             document.getElementById('loginContainer').classList.remove('hidden');
             document.getElementById('app').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
+
+            // Уничтожаем редактор при выходе
+            destroyEditor();
+        }
+
+        // Уничтожение редактора
+        function destroyEditor() {
+            try {
+                if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
+                    CKEDITOR.instances.lessonContentInput.destroy();
+                }
+            } catch (e) {
+                console.log('Ошибка при уничтожении редактора:', e);
+            }
+            editorInstance = null;
         }
 
         // Показать основное приложение
@@ -651,18 +798,73 @@
             }
         }
 
+        // Функция для инициализации CKEditor 4
+        function initEditor() {
+            if (typeof CKEDITOR === 'undefined') {
+                console.log('CKEditor еще не загружен, повторная попытка...');
+                setTimeout(initEditor, 200);
+                return;
+            }
+
+            // Уничтожаем существующий редактор если есть
+            destroyEditor();
+
+            // Отключаем ошибки экспорта в PDF
+            CKEDITOR.config.cloudServices_tokenUrl = null;
+            CKEDITOR.config.cloudServices_uploadUrl = null;
+
+            // Заменяем textarea на CKEditor
+            editorInstance = CKEDITOR.replace('lessonContentInput', {
+                height: 400,
+                language: 'ru',
+                removePlugins: 'exportpdf, cloudservices', // Отключаем плагины экспорта
+                toolbar: [
+                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'] },
+                    { name: 'links', items: ['Link', 'Unlink'] },
+                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar'] },
+                    { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                    { name: 'colors', items: ['TextColor', 'BGColor'] },
+                    { name: 'tools', items: ['Maximize'] },
+                    { name: 'document', items: ['Source'] }
+                ],
+                format_tags: 'p;h1;h2;h3;h4;h5;h6;pre;address',
+                removeDialogTabs: 'image:advanced;link:advanced',
+                contentsCss: [
+                    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+                    'h1 { color: #667eea; }',
+                    'h2 { color: #764ba2; }',
+                    'pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }',
+                    'code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }',
+                    'blockquote { border-left: 4px solid #667eea; padding-left: 10px; margin: 10px 0; font-style: italic; }',
+                    'table { border-collapse: collapse; width: 100%; }',
+                    'td, th { border: 1px solid #ddd; padding: 8px; }',
+                    'th { background: #f8f9ff; }'
+                ]
+            });
+
+            console.log('CKEditor 4 инициализирован');
+        }
+
         // Показать форму создания урока
         function showCreateForm() {
             document.getElementById('createForm').classList.remove('hidden');
             document.getElementById('lessonTitle').value = '';
-            document.getElementById('lessonContent').value = '';
+            document.getElementById('lessonContentInput').value = '';
             document.getElementById('lessonMeetingLink').value = '';
             document.getElementById('lessonPublished').checked = true;
+
+            // Инициализируем редактор с небольшой задержкой
+            setTimeout(() => {
+                initEditor();
+            }, 300);
         }
 
         // Скрыть форму создания урока
         function hideCreateForm() {
             document.getElementById('createForm').classList.add('hidden');
+            // Уничтожаем редактор при закрытии формы
+            destroyEditor();
         }
 
         // Показать форму создания ученика
@@ -694,6 +896,9 @@
         async function loadLessons() {
             try {
                 const response = await fetch(`${API_URL}/lessons`);
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки уроков');
+                }
                 lessons = await response.json();
                 renderLessonsList();
             } catch (error) {
@@ -705,6 +910,9 @@
         async function loadLesson(id) {
             try {
                 const response = await fetch(`${API_URL}/lessons/${id}`);
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки урока');
+                }
                 const lesson = await response.json();
                 selectedLessonId = id;
                 renderLessonContent(lesson);
@@ -715,40 +923,96 @@
 
         // Создать новый урок
         async function createLesson() {
-            const title = document.getElementById('lessonTitle').value;
-            const content = document.getElementById('lessonContentInput').value;
-            const meetingLink = document.getElementById('lessonMeetingLink').value;
-            const isPublished = document.getElementById('lessonPublished').checked;
-
-            if (!title || !content) {
-                alert('Заполните название и содержание урока');
+            // Проверяем авторизацию
+            if (!token) {
+                alert('Сессия истекла. Пожалуйста, войдите заново.');
+                logout();
                 return;
             }
 
+            const title = document.getElementById('lessonTitle').value;
+
+            // Получаем содержимое из CKEditor 4
+            let content = '';
             try {
+                if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
+                    content = CKEDITOR.instances.lessonContentInput.getData();
+                } else {
+                    content = document.getElementById('lessonContentInput').value;
+                }
+            } catch (e) {
+                console.error('Ошибка получения данных из редактора:', e);
+                content = document.getElementById('lessonContentInput').value;
+            }
+
+            const meetingLink = document.getElementById('lessonMeetingLink').value;
+            const isPublished = document.getElementById('lessonPublished').checked;
+
+            // Валидация
+            if (!title || !title.trim()) {
+                alert('Введите название урока');
+                return;
+            }
+
+            if (!content || !content.trim()) {
+                alert('Введите содержание урока');
+                return;
+            }
+
+            // Показываем индикатор загрузки
+            const saveBtn = document.querySelector('#createForm .admin-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Сохранение...';
+            saveBtn.disabled = true;
+
+            try {
+                console.log('Отправка данных:', { title, meetingLink, isPublished });
+                console.log('Token:', token);
+
                 const response = await fetch(`${API_URL}/lessons`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        title,
-                        content,
-                        meetingLink,
-                        isPublished
+                        title: title.trim(),
+                        content: content,
+                        meetingLink: meetingLink || '',
+                        isPublished: isPublished
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Ошибка создания урока');
+                // Проверяем статус ответа
+                if (response.status === 401) {
+                    throw new Error('Ошибка авторизации. Пожалуйста, войдите заново.');
                 }
 
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(errorData?.message || 'Ошибка создания урока');
+                }
+
+                const result = await response.json();
+                console.log('Урок создан:', result);
+
                 hideCreateForm();
-                loadLessons();
+                await loadLessons();
+                alert('Урок успешно создан!');
 
             } catch (error) {
-                alert(error.message);
+                console.error('Ошибка создания урока:', error);
+                alert('Ошибка: ' + error.message);
+
+                // Если ошибка авторизации - разлогиниваем
+                if (error.message.includes('авторизации') || error.message.includes('401')) {
+                    logout();
+                }
+            } finally {
+                // Возвращаем кнопку в исходное состояние
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
             }
         }
 
@@ -765,6 +1029,9 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Ошибка авторизации');
+                    }
                     throw new Error('Ошибка удаления урока');
                 }
 
@@ -777,6 +1044,9 @@
 
             } catch (error) {
                 alert(error.message);
+                if (error.message.includes('авторизации')) {
+                    logout();
+                }
             }
         }
 
@@ -788,10 +1058,19 @@
                         'Authorization': `Bearer ${token}`
                     }
                 });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Ошибка авторизации');
+                    }
+                    throw new Error('Ошибка загрузки учеников');
+                }
                 students = await response.json();
                 renderStudentsList();
             } catch (error) {
                 console.error('Ошибка загрузки учеников:', error);
+                if (error.message.includes('авторизации')) {
+                    logout();
+                }
             }
         }
 
@@ -940,17 +1219,17 @@
                 const selectedClass = selectedLessonId === lesson.id ? 'selected' : '';
 
                 html += `
-            <div class="lesson-item ${selectedClass}" data-lesson-id="${lesson.id}">
-                <h3>${lesson.title}</h3>
-                <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
-        `;
+                <div class="lesson-item ${selectedClass}" data-lesson-id="${lesson.id}">
+                    <h3>${lesson.title}</h3>
+                    <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
+            `;
 
                 if (currentUser?.role === 'admin') {
                     html += `
-                <button class="admin-btn delete delete-lesson-btn" data-id="${lesson.id}">
-                    Удалить
-                </button>
-            `;
+                    <button class="delete-lesson-btn" data-id="${lesson.id}">
+                        Удалить
+                    </button>
+                `;
                 }
 
                 html += `</div>`;
@@ -974,7 +1253,7 @@
             // Добавляем обработчики на кнопки удаления отдельно
             document.querySelectorAll('.delete-lesson-btn').forEach(btn => {
                 btn.addEventListener('click', function (e) {
-                    e.stopPropagation(); // Останавливаем всплытие события
+                    e.stopPropagation();
                     const lessonId = this.dataset.id;
                     if (lessonId) {
                         deleteLesson(parseInt(lessonId));
@@ -982,26 +1261,27 @@
                 });
             });
         }
+
         // Отрендерить содержимое урока
         function renderLessonContent(lesson) {
             const content = document.getElementById('lessonContent');
 
             let html = `
-        <h2>${lesson.title}</h2>
-        <div class="content">${lesson.content}</div>
-    `;
+            <h2>${lesson.title}</h2>
+            <div class="content">${lesson.content}</div>
+        `;
 
             if (lesson.meetingLink) {
                 html += `
-            <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
-        `;
+                <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
+            `;
             }
 
             html += `
-        <div class="lesson-meta">
-            Автор: ${lesson.authorName}<br>
-            Создано: ${new Date(lesson.createdAt).toLocaleString()}
-    `;
+            <div class="lesson-meta">
+                Автор: ${lesson.authorName}<br>
+                Создано: ${new Date(lesson.createdAt).toLocaleString()}
+        `;
 
             if (lesson.updatedAt) {
                 html += `<br>Обновлено: ${new Date(lesson.updatedAt).toLocaleString()}`;
@@ -1010,8 +1290,8 @@
             html += `</div>`;
 
             content.innerHTML = html;
-            console.log(content)
         }
+
         // Отрендерить список учеников
         function renderStudentsList() {
             const list = document.getElementById('studentsList');
@@ -1022,24 +1302,24 @@
             }
 
             list.innerHTML = students.map(student => `
-                <tr>
-                    <td>${student.id}</td>
-                    <td>${student.username}</td>
-                    <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
-                        ${student.isActive ? 'Активен' : 'Заблокирован'}
-                    </td>
-                    <td>${new Date(student.createdAt).toLocaleDateString()}</td>
-                    <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
-                    <td class="student-actions">
-                        ${student.isActive ?
+            <tr>
+                <td>${student.id}</td>
+                <td>${student.username}</td>
+                <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
+                    ${student.isActive ? 'Активен' : 'Заблокирован'}
+                </td>
+                <td>${new Date(student.createdAt).toLocaleDateString()}</td>
+                <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
+                <td class="student-actions">
+                    ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
                     `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
                 }
-                        <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
-                        <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
-                    </td>
-                </tr>
-            `).join('');
+                    <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
+                    <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
+                </td>
+            </tr>
+        `).join('');
         }
 
         // Добавляем обработчик на кнопку выхода
