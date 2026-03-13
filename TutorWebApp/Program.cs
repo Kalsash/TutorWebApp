@@ -10,14 +10,46 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// 👇 ДОБАВЛЯЕМ CORS С РАЗРЕШЕНИЕМ null (для file://)
+// 👇 УНИВЕРСАЛЬНЫЙ CORS - поддерживает всё
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()  // Разрешает любые источники, включая null
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            // 1. Всегда разрешаем null и file:// (для локальной разработки)
+            if (origin == "null" || origin.StartsWith("file://"))
+                return true;
+
+            // 2. Все локальные адреса для разработки
+            if (origin.Contains("localhost") ||
+                origin.Contains("127.0.0.1") ||
+                origin.StartsWith("http://localhost") ||
+                origin.StartsWith("https://localhost"))
+                return true;
+
+            // 3. ДОМЕНЫ НА RENDER
+            if (origin.Contains("tutor-api-web.onrender.com") ||
+                origin.Contains("tutor-api.onrender.com") ||
+                origin.Contains("tutor-server.onrender.com"))
+                return true;
+
+            // 4. 👇 НОВОЕ: GitHub Pages
+            if (origin.Contains("kalsash.github.io") ||
+                origin.StartsWith("https://kalsash.github.io") ||
+                origin.EndsWith(".github.io"))  // на случай других проектов
+                return true;
+
+            // 5. Для любых origins в development режиме
+            if (builder.Environment.IsDevelopment())
+                return true;
+
+            // Если ничего не подошло - отклоняем
+            return false;
+        })
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();  // 👈 ВАЖНО: добавляем поддержку кук/авторизации
     });
 });
 
@@ -82,9 +114,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Swagger
-builder.Services.AddEndpointsApiExplorer();
-
 var app = builder.Build();
 app.UseCors("AllowAll");  
 
@@ -95,11 +124,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tutor API V1");
-        c.RoutePrefix = string.Empty; // Открывает Swagger по корневому URL (https://localhost:7122/)
+        c.RoutePrefix = string.Empty;
     });
 }
 
-app.UseHttpsRedirection();
+// ВАЖНО: Убираем UseHttpsRedirection на Render
+// Render сам терминирует HTTPS
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication(); 
 app.UseAuthorization();
 
