@@ -1,0 +1,14 @@
+docker-compose down -v
+docker system prune -a
+docker-compose up --build
+
+docker build -t kalsash/tutor-web-app:latest .
+
+docker compose up --build
+
+
+url for docker: 
+const API_URL = 'http://localhost:8080/api';
+
+url for localhost:
+const API_URL = 'https://localhost:7122/api';

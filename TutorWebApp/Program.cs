@@ -109,19 +109,7 @@ app.MapGet("/", () => "OK");
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    // Проверяем, создана ли БД
-    if (!dbContext.Database.CanConnect())
-    {
-        // Создаем только если БД не существует
-        dbContext.Database.EnsureCreated();
-    }
-
-    // Инициализируем только если таблицы пустые
-    if (!dbContext.Users.Any()) // проверьте свои таблицы
-    {
-        DbInitializer.Initialize(dbContext);
-    }
+    DbInitializer.Initialize(dbContext);
 }
 
 app.Run();
