@@ -23,7 +23,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./TutorWebApp        
+          file: ./TutorWebApp/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/tutor-web-app:latest
 
