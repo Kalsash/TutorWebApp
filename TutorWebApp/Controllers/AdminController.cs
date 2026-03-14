@@ -8,7 +8,7 @@ namespace TutorApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "admin")] // Только админ имеет доступ ко всем методам
+    [Authorize(Roles = "admin")] 
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
