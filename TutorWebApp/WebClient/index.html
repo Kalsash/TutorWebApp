@@ -107,10 +107,20 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        .lesson-item.selected .edit-lesson-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+        }
+
+        .lesson-item.selected .edit-lesson-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .lesson-item h3 {
             margin: 0 0 5px 0;
             font-size: 1rem;
-            padding-right: 70px;
+            padding-right: 120px;
         }
 
         .lesson-item small {
@@ -139,7 +149,7 @@
         .edit-lesson-btn {
             position: absolute;
             top: 10px;
-            right: 80px;
+            right: 70px;
             padding: 5px 10px;
             font-size: 0.8rem;
             background: #667eea;
@@ -215,6 +225,24 @@
         .meeting-link:hover {
             background: #5a6fd8;
         }
+
+
+        .board-link {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .board-link:hover {
+            background: #5a6fd8;
+        }
+
+
 
         .lesson-meta {
             margin-top: 30px;
@@ -876,6 +904,23 @@
         .input-success {
             border-color: #27ae60 !important;
         }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
     </style>
 </head>
 
@@ -933,6 +978,7 @@
             <!-- CKEditor 4 будет применён к этому textarea -->
             <textarea id="lessonContentInput" placeholder="Содержание урока"></textarea>
             <input type="text" id="lessonMeetingLink" placeholder="Ссылка на телемост (необязательно)">
+            <input type="text" id="lessonBoardLink" placeholder="Ссылка на доску (необязательно)">
             <label>
                 <input type="checkbox" id="lessonPublished" checked>
                 Опубликовать сразу
@@ -944,11 +990,12 @@
         <!-- Форма редактирования урока -->
         <div id="editLessonForm" class="lesson-form hidden"
             style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
-            <h2 id="editLessonTitle">Редактирование урока</h2>
+            <h2>Редактирование урока</h2>
             <input type="hidden" id="editLessonId">
             <input type="text" id="editLessonTitleInput" placeholder="Название урока">
             <textarea id="editLessonContentInput" placeholder="Содержание урока"></textarea>
             <input type="text" id="editLessonMeetingLink" placeholder="Ссылка на телемост (необязательно)">
+            <input type="text" id="editLessonBoardLink" placeholder="Ссылка на доску (необязательно)">
             <label>
                 <input type="checkbox" id="editLessonPublished">
                 Опубликовано
@@ -978,7 +1025,7 @@
             </div>
 
             <input type="password" id="createStudentPassword" placeholder="Пароль *"
-                oninput="validatePassword(this, 'createStudentPasswordError')">
+                oninput="validatePassword(this, 'createStudentPasswordError', false)">
             <div id="createStudentPasswordError" class="validation-error hidden"></div>
 
             <input type="password" id="createStudentConfirmPassword" placeholder="Подтверждение пароля *"
@@ -1234,9 +1281,6 @@
         function checkCKEditorLoaded() {
             if (typeof CKEDITOR !== 'undefined') {
                 console.log('CKEditor 4 загружен');
-                CKEDITOR.on('instanceLoaded', function () {
-                    console.log('CKEditor 4 готов к работе');
-                });
             } else {
                 setTimeout(checkCKEditorLoaded, 100);
             }
@@ -1569,6 +1613,7 @@
             document.getElementById('lessonTitle').value = '';
             document.getElementById('lessonContentInput').value = '';
             document.getElementById('lessonMeetingLink').value = '';
+            document.getElementById('lessonBoardLink').value = '';
             document.getElementById('lessonPublished').checked = true;
 
             setTimeout(() => {
@@ -1582,17 +1627,23 @@
         }
 
         function showEditLessonForm(lesson) {
+            hideCreateForm();
+            hideCreateStudentForm();
+            hideEditStudentForm();
+
             document.getElementById('editLessonForm').classList.remove('hidden');
             document.getElementById('editLessonId').value = lesson.id;
-            document.getElementById('editLessonTitleInput').value = lesson.title;
+            document.getElementById('editLessonTitleInput').value = lesson.title || '';
             document.getElementById('editLessonMeetingLink').value = lesson.meetingLink || '';
-            document.getElementById('editLessonPublished').checked = lesson.isPublished;
-
-            // Устанавливаем содержимое в редактор после его инициализации
-            document.getElementById('editLessonContentInput').value = lesson.content;
+            document.getElementById('editLessonBoardLink').value = lesson.boardLink || '';
+            document.getElementById('editLessonPublished').checked = lesson.isPublished || false;
+            document.getElementById('editLessonContentInput').value = lesson.content || '';
 
             setTimeout(() => {
                 initEditEditor();
+                if (CKEDITOR.instances && CKEDITOR.instances.editLessonContentInput) {
+                    CKEDITOR.instances.editLessonContentInput.setData(lesson.content || '');
+                }
             }, 300);
         }
 
@@ -1609,7 +1660,6 @@
             document.getElementById('createStudentPassword').value = '';
             document.getElementById('createStudentConfirmPassword').value = '';
 
-            // Скрываем ошибки
             document.getElementById('createStudentFormError').classList.add('hidden');
             document.getElementById('createStudentUsernameError').classList.add('hidden');
             document.getElementById('createStudentFirstNameError').classList.add('hidden');
@@ -1630,7 +1680,6 @@
             document.getElementById('editStudentNewPassword').value = '';
             document.getElementById('editStudentConfirmPassword').value = '';
 
-            // Скрываем ошибки
             document.getElementById('editStudentFormError').classList.add('hidden');
             document.getElementById('editStudentUsernameError').classList.add('hidden');
             document.getElementById('editStudentFirstNameError').classList.add('hidden');
@@ -1905,16 +1954,19 @@
 
             CKEDITOR.config.extraAllowedContent = 'pre[class,data-*]; code[class,data-*]; span[class]; div[class]';
 
-            CKEDITOR.plugins.add('codebutton', {
-                init: function (editor) {
-                    editor.ui.addButton('CodeButton', {
-                        label: 'Вставить код',
-                        icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
-                        command: 'showCodeModal',
-                        toolbar: 'insert'
-                    });
-                }
-            });
+            // Регистрируем плагин только если его еще нет
+            if (!CKEDITOR.plugins.get('codebutton')) {
+                CKEDITOR.plugins.add('codebutton', {
+                    init: function (editor) {
+                        editor.ui.addButton('CodeButton', {
+                            label: 'Вставить код',
+                            icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
+                            command: 'showCodeModal',
+                            toolbar: 'insert'
+                        });
+                    }
+                });
+            }
 
             editorInstance = CKEDITOR.replace('lessonContentInput', {
                 height: 400,
@@ -1973,16 +2025,19 @@
 
             CKEDITOR.config.extraAllowedContent = 'pre[class,data-*]; code[class,data-*]; span[class]; div[class]';
 
-            CKEDITOR.plugins.add('codebutton', {
-                init: function (editor) {
-                    editor.ui.addButton('CodeButton', {
-                        label: 'Вставить код',
-                        icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
-                        command: 'showCodeModal',
-                        toolbar: 'insert'
-                    });
-                }
-            });
+            // Регистрируем плагин только если его еще нет
+            if (!CKEDITOR.plugins.get('codebutton')) {
+                CKEDITOR.plugins.add('codebutton', {
+                    init: function (editor) {
+                        editor.ui.addButton('CodeButton', {
+                            label: 'Вставить код',
+                            icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
+                            command: 'showCodeModal',
+                            toolbar: 'insert'
+                        });
+                    }
+                });
+            }
 
             editEditorInstance = CKEDITOR.replace('editLessonContentInput', {
                 height: 400,
@@ -2023,7 +2078,7 @@
                 return;
             }
 
-            const title = document.getElementById('lessonTitle').value;
+            const title = document.getElementById('lessonTitle').value.trim();
 
             let content = '';
             try {
@@ -2037,10 +2092,11 @@
                 content = document.getElementById('lessonContentInput').value;
             }
 
-            const meetingLink = document.getElementById('lessonMeetingLink').value;
+            const meetingLink = document.getElementById('lessonMeetingLink').value.trim();
+            const boardLink = document.getElementById('lessonBoardLink').value.trim();
             const isPublished = document.getElementById('lessonPublished').checked;
 
-            if (!title || !title.trim()) {
+            if (!title) {
                 alert('Введите название урока');
                 return;
             }
@@ -2064,9 +2120,10 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        title: title.trim(),
+                        title: title,
                         content: content,
                         meetingLink: meetingLink || '',
+                        boardLink: boardLink || '',
                         isPublished: isPublished
                     })
                 });
@@ -2079,8 +2136,6 @@
                     const errorData = await response.json().catch(() => null);
                     throw new Error(errorData?.message || 'Ошибка создания урока');
                 }
-
-                const result = await response.json();
 
                 hideCreateForm();
                 await loadLessons();
@@ -2107,7 +2162,7 @@
             }
 
             const id = document.getElementById('editLessonId').value;
-            const title = document.getElementById('editLessonTitleInput').value;
+            const title = document.getElementById('editLessonTitleInput').value.trim();
 
             let content = '';
             try {
@@ -2121,10 +2176,11 @@
                 content = document.getElementById('editLessonContentInput').value;
             }
 
-            const meetingLink = document.getElementById('editLessonMeetingLink').value;
+            const meetingLink = document.getElementById('editLessonMeetingLink').value.trim();
+            const boardLink = document.getElementById('editLessonBoardLink').value.trim();
             const isPublished = document.getElementById('editLessonPublished').checked;
 
-            if (!title || !title.trim()) {
+            if (!title) {
                 alert('Введите название урока');
                 return;
             }
@@ -2148,9 +2204,10 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        title: title.trim(),
+                        title: title,
                         content: content,
                         meetingLink: meetingLink || '',
+                        boardLink: boardLink || '',
                         isPublished: isPublished
                     })
                 });
@@ -2166,9 +2223,11 @@
 
                 hideEditLessonForm();
                 await loadLessons();
+
                 if (selectedLessonId == id) {
-                    loadLesson(id);
+                    await loadLesson(id);
                 }
+
                 alert('Урок успешно обновлён!');
 
             } catch (error) {
@@ -2248,7 +2307,6 @@
             const lastName = document.getElementById('createStudentLastName').value.trim() || null;
             const errorDiv = document.getElementById('createStudentFormError');
 
-            // Валидация
             if (!username) {
                 errorDiv.textContent = 'Введите логин';
                 errorDiv.classList.remove('hidden');
@@ -2265,7 +2323,7 @@
                 return;
             }
 
-            if (!validatePassword(document.getElementById('createStudentPassword'), 'createStudentPasswordError')) {
+            if (!validatePassword(document.getElementById('createStudentPassword'), 'createStudentPasswordError', false)) {
                 return;
             }
 
@@ -2331,7 +2389,6 @@
             const confirmPassword = document.getElementById('editStudentConfirmPassword').value;
             const errorDiv = document.getElementById('editStudentFormError');
 
-            // Валидация
             if (!username) {
                 errorDiv.textContent = 'Введите логин';
                 errorDiv.classList.remove('hidden');
@@ -2509,19 +2566,20 @@
 
                 html += `
                 <div class="lesson-item ${selectedClass}" data-lesson-id="${lesson.id}">
-                    <h3>${lesson.title}</h3>
+                    <h3>${escapeHtml(lesson.title)}</h3>
                     <small>${new Date(lesson.createdAt).toLocaleDateString()}</small>
-            `;
+                `;
 
                 if (currentUser?.role === 'admin') {
+                    const lessonData = encodeURIComponent(JSON.stringify(lesson));
                     html += `
-                    <button class="edit-lesson-btn" onclick="event.stopPropagation(); showEditLessonForm(${JSON.stringify(lesson).replace(/"/g, '&quot;')})">
+                    <button class="edit-lesson-btn" onclick="event.stopPropagation(); showEditLessonForm(JSON.parse(decodeURIComponent('${lessonData}')))">
                         ✏️
                     </button>
                     <button class="delete-lesson-btn" data-id="${lesson.id}">
                         Удалить
                     </button>
-                `;
+                    `;
                 }
 
                 html += `</div>`;
@@ -2556,7 +2614,6 @@
         function renderLessonContent(lesson) {
             const content = document.getElementById('lessonContent');
 
-            // Добавляем секцию для файлов, если её нет
             if (!document.getElementById('lessonFiles')) {
                 const filesDiv = document.createElement('div');
                 filesDiv.id = 'lessonFiles';
@@ -2565,7 +2622,7 @@
             }
 
             let html = `
-                <h2>${lesson.title}</h2>
+                <h2>${escapeHtml(lesson.title)}</h2>
                 <div class="content">${lesson.content}</div>
             `;
 
@@ -2574,10 +2631,15 @@
                     <a href="${lesson.meetingLink}" target="_blank" class="meeting-link">Ссылка на занятие</a>
                 `;
             }
+            if (lesson.boardLink) {
+                html += `
+                    <a href="${lesson.boardLink}" target="_blank" class="board-link">Ссылка на доску</a>
+                `;
+            }
 
             html += `
                 <div class="lesson-meta">
-                    Автор: ${lesson.authorName}<br>
+                    Автор: ${escapeHtml(lesson.authorName)}<br>
                     Создано: ${new Date(lesson.createdAt).toLocaleString()}
             `;
 
@@ -2642,9 +2704,9 @@
                         👤
                     </div>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 5px;">${fullName}</h3>
+                        <h3 style="color: #333; margin-bottom: 5px;">${escapeHtml(fullName)}</h3>
                         <p><span class="role-badge role-user">Ученик</span></p>
-                        <p style="color: #666; font-size: 0.9rem;">Логин: ${student.username}</p>
+                        <p style="color: #666; font-size: 0.9rem;">Логин: ${escapeHtml(student.username)}</p>
                     </div>
                 </div>
                 
@@ -2683,7 +2745,7 @@
                 </div>
                 
                 <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
-                    <button class="admin-btn" onclick="showEditStudentForm(${JSON.stringify(student).replace(/"/g, '&quot;')}); closeStudentProfile();">✏️ Редактировать</button>
+                    <button class="admin-btn warning" onclick="showEditStudentForm(${JSON.stringify(student).replace(/"/g, '&quot;')}); closeStudentProfile();">✏️ Редактировать</button>
                     <button class="admin-btn" onclick="showResetPasswordModal(${student.id}); closeStudentProfile();">Сбросить пароль</button>
                     ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id}); closeStudentProfile();">Заблокировать</button>` :
@@ -2712,20 +2774,20 @@
             }
 
             list.innerHTML = students.map(student => {
-                const fullName = [student.lastName, student.firstName].filter(Boolean).join(' ');
+                const studentData = encodeURIComponent(JSON.stringify(student));
                 return `
                 <tr onclick="loadStudentProfile(${student.id})" style="cursor: pointer;">
                     <td>${student.id}</td>
-                    <td>${student.username}</td>
-                    <td>${student.firstName || '—'}</td>
-                    <td>${student.lastName || '—'}</td>
+                    <td>${escapeHtml(student.username)}</td>
+                    <td>${escapeHtml(student.firstName || '—')}</td>
+                    <td>${escapeHtml(student.lastName || '—')}</td>
                     <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
                         ${student.isActive ? 'Активен' : 'Заблокирован'}
                     </td>
                     <td>${new Date(student.createdAt).toLocaleDateString()}</td>
                     <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
                     <td class="student-actions" onclick="event.stopPropagation();">
-                        <button class="admin-btn" style="background: #f39c12;" onclick="showEditStudentForm(${JSON.stringify(student).replace(/"/g, '&quot;')})">✏️</button>
+                        <button class="admin-btn warning" onclick="showEditStudentForm(JSON.parse(decodeURIComponent('${studentData}')))">✏️</button>
                         ${student.isActive ?
                         `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
                         `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
@@ -2776,7 +2838,6 @@
                 document.getElementById('statsRead').textContent = Math.floor(Math.random() * lessons.length);
             }
 
-            // Обновляем отображение полного имени в шапке
             const fullNameDisplay = document.getElementById('userFullNameDisplay');
             if (fullNameDisplay) {
                 fullNameDisplay.textContent = fullName !== userProfile.username ? `(${fullName})` : '';
