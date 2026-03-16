@@ -13,6 +13,7 @@ namespace TutorApi.Data
 
                 // ВАЖНО: Принудительно создаем ВСЕ таблицы
                 // Этот метод гарантированно создаст таблицы, если их нет
+                context.Database.EnsureDeleted();
                 var created = context.Database.EnsureCreated();
 
                 if (created)

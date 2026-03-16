@@ -9,11 +9,10 @@ namespace TutorApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "admin")] 
+    [Authorize(Roles = "admin")]
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
-
         private readonly IValidationService _validationService;
 
         public AdminController(AppDbContext context, IValidationService validationService)
@@ -26,10 +25,20 @@ namespace TutorApi.Controllers
         {
             public string Username { get; set; } = string.Empty;
             public string Password { get; set; } = string.Empty;
+            public string? FirstName { get; set; }
+            public string? LastName { get; set; }
+        }
+
+        public class UpdateUserRequest
+        {
+            public string Username { get; set; } = string.Empty;
+            public string? FirstName { get; set; }
+            public string? LastName { get; set; }
+            public string? Password { get; set; } // Опционально, если нужно сменить пароль
         }
 
         /// <summary>
-        /// Создать нового ученика (только админ)
+        /// Создать нового ученика
         /// </summary>
         [HttpPost("createuser")]
         public async Task<IActionResult> CreateUser(CreateUserRequest request)
@@ -39,10 +48,26 @@ namespace TutorApi.Controllers
             if (!usernameValidation.IsValid)
                 return BadRequest(new { message = usernameValidation.ErrorMessage });
 
-            // Валидация пароля (при создании пользователя требуем сложный пароль)
+            // Валидация пароля
             var passwordValidation = _validationService.ValidateNewPassword(request.Password, isReset: false);
             if (!passwordValidation.IsValid)
                 return BadRequest(new { message = passwordValidation.ErrorMessage });
+
+            // Валидация имени (если указано)
+            if (!string.IsNullOrEmpty(request.FirstName))
+            {
+                var firstNameValidation = _validationService.ValidateFirstName(request.FirstName);
+                if (!firstNameValidation.IsValid)
+                    return BadRequest(new { message = firstNameValidation.ErrorMessage });
+            }
+
+            // Валидация фамилии (если указана)
+            if (!string.IsNullOrEmpty(request.LastName))
+            {
+                var lastNameValidation = _validationService.ValidateLastName(request.LastName);
+                if (!lastNameValidation.IsValid)
+                    return BadRequest(new { message = lastNameValidation.ErrorMessage });
+            }
 
             // Проверяем, не занят ли логин
             var existingUser = await _context.Users
@@ -54,6 +79,8 @@ namespace TutorApi.Controllers
             var user = new User
             {
                 Username = request.Username,
+                FirstName = request.FirstName?.Trim(),
+                LastName = request.LastName?.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = "user",
                 IsActive = true,
@@ -70,9 +97,90 @@ namespace TutorApi.Controllers
                 {
                     user.Id,
                     user.Username,
+                    user.FirstName,
+                    user.LastName,
+                    user.FullName,
                     user.Role,
                     user.IsActive,
                     user.CreatedAt
+                }
+            });
+        }
+
+        /// <summary>
+        /// Редактировать ученика (логин, имя, фамилия, пароль)
+        /// </summary>
+        [HttpPut("users/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, UpdateUserRequest request)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == id && u.Role == "user");
+
+            if (user == null)
+                return NotFound(new { message = "Ученик не найден" });
+
+            // Валидация нового логина, если он изменяется
+            if (user.Username != request.Username)
+            {
+                var usernameValidation = _validationService.ValidateUsername(request.Username);
+                if (!usernameValidation.IsValid)
+                    return BadRequest(new { message = usernameValidation.ErrorMessage });
+
+                // Проверяем, не занят ли новый логин другим пользователем
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == request.Username && u.Id != id);
+
+                if (existingUser != null)
+                    return BadRequest(new { message = "Пользователь с таким логином уже существует" });
+            }
+
+            // Валидация имени (если указано и изменилось)
+            if (!string.IsNullOrEmpty(request.FirstName) && user.FirstName != request.FirstName?.Trim())
+            {
+                var firstNameValidation = _validationService.ValidateFirstName(request.FirstName);
+                if (!firstNameValidation.IsValid)
+                    return BadRequest(new { message = firstNameValidation.ErrorMessage });
+            }
+
+            // Валидация фамилии (если указана и изменилась)
+            if (!string.IsNullOrEmpty(request.LastName) && user.LastName != request.LastName?.Trim())
+            {
+                var lastNameValidation = _validationService.ValidateLastName(request.LastName);
+                if (!lastNameValidation.IsValid)
+                    return BadRequest(new { message = lastNameValidation.ErrorMessage });
+            }
+
+            // Обновляем поля
+            user.Username = request.Username;
+            user.FirstName = request.FirstName?.Trim();
+            user.LastName = request.LastName?.Trim();
+
+            // Если передан новый пароль, обновляем его
+            if (!string.IsNullOrWhiteSpace(request.Password))
+            {
+                var passwordValidation = _validationService.ValidateNewPassword(request.Password, isReset: true);
+                if (!passwordValidation.IsValid)
+                    return BadRequest(new { message = passwordValidation.ErrorMessage });
+
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Данные ученика успешно обновлены",
+                user = new
+                {
+                    user.Id,
+                    user.Username,
+                    user.FirstName,
+                    user.LastName,
+                    user.FullName,
+                    user.Role,
+                    user.IsActive,
+                    user.CreatedAt,
+                    user.LastLoginAt
                 }
             });
         }
@@ -84,11 +192,14 @@ namespace TutorApi.Controllers
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _context.Users
-                .Where(u => u.Role == "user") // Только ученики, без админов
+                .Where(u => u.Role == "user")
                 .Select(u => new
                 {
                     u.Id,
                     u.Username,
+                    u.FirstName,
+                    u.LastName,
+                    FullName = u.LastName + " " + u.FirstName,
                     u.IsActive,
                     u.CreatedAt,
                     u.LastLoginAt
@@ -110,6 +221,9 @@ namespace TutorApi.Controllers
                 {
                     u.Id,
                     u.Username,
+                    u.FirstName,
+                    u.LastName,
+                    FullName = u.FullName,
                     u.IsActive,
                     u.CreatedAt,
                     u.LastLoginAt

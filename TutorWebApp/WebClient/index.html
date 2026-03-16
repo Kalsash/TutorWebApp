@@ -136,6 +136,24 @@
             background: #c0392b;
         }
 
+        .edit-lesson-btn {
+            position: absolute;
+            top: 10px;
+            right: 80px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .edit-lesson-btn:hover {
+            background: #5a6fd8;
+        }
+
         /* Правая колонка - содержимое урока */
         .lesson-content {
             background: white;
@@ -248,6 +266,14 @@
             background: #219a52;
         }
 
+        .admin-btn.warning {
+            background: #f39c12;
+        }
+
+        .admin-btn.warning:hover {
+            background: #e67e22;
+        }
+
         /* Форма создания урока */
         .lesson-form {
             background: white;
@@ -284,6 +310,17 @@
 
         .lesson-form input[type="checkbox"] {
             width: auto;
+            margin-bottom: 0;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-row>* {
+            flex: 1;
             margin-bottom: 0;
         }
 
@@ -550,10 +587,40 @@
             background: white;
             padding: 30px;
             border-radius: 10px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
         }
 
         /* Личный кабинет */
@@ -792,6 +859,23 @@
             display: flex;
             gap: 5px;
         }
+
+        /* Индикаторы валидации */
+        .validation-error {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+
+        .input-error {
+            border-color: #e74c3c !important;
+        }
+
+        .input-success {
+            border-color: #27ae60 !important;
+        }
     </style>
 </head>
 
@@ -799,6 +883,7 @@
     <!-- Информация о пользователе -->
     <div id="userInfo" class="user-info hidden">
         <span id="usernameDisplay"></span>
+        <span id="userFullNameDisplay" style="color: #666; font-size: 0.9rem;"></span>
         <button id="logoutBtn" class="logout-btn">Выйти</button>
     </div>
 
@@ -856,23 +941,99 @@
             <button class="admin-btn delete" onclick="hideCreateForm()">Отмена</button>
         </div>
 
+        <!-- Форма редактирования урока -->
+        <div id="editLessonForm" class="lesson-form hidden"
+            style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
+            <h2 id="editLessonTitle">Редактирование урока</h2>
+            <input type="hidden" id="editLessonId">
+            <input type="text" id="editLessonTitleInput" placeholder="Название урока">
+            <textarea id="editLessonContentInput" placeholder="Содержание урока"></textarea>
+            <input type="text" id="editLessonMeetingLink" placeholder="Ссылка на телемост (необязательно)">
+            <label>
+                <input type="checkbox" id="editLessonPublished">
+                Опубликовано
+            </label>
+            <button class="admin-btn" onclick="updateLesson()">Обновить</button>
+            <button class="admin-btn delete" onclick="hideEditLessonForm()">Отмена</button>
+        </div>
+
         <!-- Форма создания ученика -->
         <div id="createStudentForm" class="lesson-form hidden"
             style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
             <h2>Новый ученик</h2>
-            <input type="text" id="studentUsername" placeholder="Логин ученика">
-            <input type="text" id="studentPassword" placeholder="Пароль">
+            <div id="createStudentFormError" class="error hidden"></div>
+            <input type="text" id="createStudentUsername" placeholder="Логин ученика *"
+                oninput="validateUsername(this, 'createStudentUsernameError')">
+            <div id="createStudentUsernameError" class="validation-error hidden"></div>
+
+            <div class="form-row">
+                <input type="text" id="createStudentFirstName" placeholder="Имя"
+                    oninput="validateName(this, 'createStudentFirstNameError')">
+                <input type="text" id="createStudentLastName" placeholder="Фамилия"
+                    oninput="validateName(this, 'createStudentLastNameError')">
+            </div>
+            <div class="form-row">
+                <div id="createStudentFirstNameError" class="validation-error hidden"></div>
+                <div id="createStudentLastNameError" class="validation-error hidden"></div>
+            </div>
+
+            <input type="password" id="createStudentPassword" placeholder="Пароль *"
+                oninput="validatePassword(this, 'createStudentPasswordError')">
+            <div id="createStudentPasswordError" class="validation-error hidden"></div>
+
+            <input type="password" id="createStudentConfirmPassword" placeholder="Подтверждение пароля *"
+                oninput="validatePasswordConfirm('createStudentPassword', 'createStudentConfirmPassword', 'createStudentPasswordError')">
+
             <button class="admin-btn" onclick="createStudent()">Создать</button>
             <button class="admin-btn delete" onclick="hideCreateStudentForm()">Отмена</button>
+        </div>
+
+        <!-- Форма редактирования ученика -->
+        <div id="editStudentForm" class="lesson-form hidden"
+            style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
+            <h2>Редактирование ученика</h2>
+            <div id="editStudentFormError" class="error hidden"></div>
+            <input type="hidden" id="editStudentId">
+
+            <input type="text" id="editStudentUsername" placeholder="Логин ученика *"
+                oninput="validateUsername(this, 'editStudentUsernameError')">
+            <div id="editStudentUsernameError" class="validation-error hidden"></div>
+
+            <div class="form-row">
+                <input type="text" id="editStudentFirstName" placeholder="Имя"
+                    oninput="validateName(this, 'editStudentFirstNameError')">
+                <input type="text" id="editStudentLastName" placeholder="Фамилия"
+                    oninput="validateName(this, 'editStudentLastNameError')">
+            </div>
+            <div class="form-row">
+                <div id="editStudentFirstNameError" class="validation-error hidden"></div>
+                <div id="editStudentLastNameError" class="validation-error hidden"></div>
+            </div>
+
+            <h3 style="margin: 20px 0 10px; color: #667eea;">Смена пароля (необязательно)</h3>
+            <input type="password" id="editStudentNewPassword" placeholder="Новый пароль"
+                oninput="validatePassword(this, 'editStudentPasswordError', true)">
+            <div id="editStudentPasswordError" class="validation-error hidden"></div>
+
+            <input type="password" id="editStudentConfirmPassword" placeholder="Подтверждение нового пароля"
+                oninput="validatePasswordConfirm('editStudentNewPassword', 'editStudentConfirmPassword', 'editStudentPasswordError')">
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="admin-btn" onclick="updateStudent()">Сохранить изменения</button>
+                <button class="admin-btn delete" onclick="hideEditStudentForm()">Отмена</button>
+            </div>
         </div>
 
         <!-- Модальное окно сброса пароля -->
         <div id="resetPasswordModal" class="modal hidden">
             <div class="modal-content">
-                <h3>Сброс пароля</h3>
+                <div class="modal-header">
+                    <h2>Сброс пароля</h2>
+                    <button class="modal-close" onclick="closeResetPasswordModal()">&times;</button>
+                </div>
                 <input type="password" id="resetPasswordInput" placeholder="Новый пароль"
                     style="width: 100%; padding: 10px; margin: 20px 0;">
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <div class="modal-footer">
                     <button class="admin-btn" onclick="confirmResetPassword()">Сохранить</button>
                     <button class="admin-btn delete" onclick="closeResetPasswordModal()">Отмена</button>
                 </div>
@@ -882,7 +1043,10 @@
         <!-- Модальное окно для вставки кода -->
         <div id="codeModal" class="modal hidden">
             <div class="modal-content">
-                <h3 style="margin-bottom: 20px;">Вставка кода</h3>
+                <div class="modal-header">
+                    <h2>Вставка кода</h2>
+                    <button class="modal-close" onclick="closeCodeModal()">&times;</button>
+                </div>
                 <select id="codeLanguage" style="width: 100%; padding: 10px; margin-bottom: 20px;">
                     <option value="python">Python</option>
                     <option value="csharp">C#</option>
@@ -896,7 +1060,7 @@
                     <option value="json">JSON</option>
                 </select>
                 <textarea id="codeInput" rows="10" placeholder="Введите ваш код здесь..."></textarea>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <div class="modal-footer">
                     <button class="admin-btn" onclick="insertCode()">Вставить</button>
                     <button class="admin-btn delete" onclick="closeCodeModal()">Отмена</button>
                 </div>
@@ -906,18 +1070,21 @@
         <!-- Модальное окно загрузки файла -->
         <div id="uploadFileModal" class="modal hidden">
             <div class="modal-content" style="max-width: 500px;">
-                <h3 style="margin-bottom: 20px;">Загрузка файла</h3>
+                <div class="modal-header">
+                    <h2>Загрузка файла</h2>
+                    <button class="modal-close" onclick="closeUploadFileModal()">&times;</button>
+                </div>
                 <select id="fileLessonSelect" style="width: 100%; padding: 10px; margin-bottom: 20px;">
                     <option value="">Без привязки к уроку</option>
                 </select>
                 <input type="file" id="fileInput"
                     style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button class="admin-btn" onclick="uploadFile()">Загрузить</button>
-                    <button class="admin-btn delete" onclick="closeUploadFileModal()">Отмена</button>
-                </div>
                 <div id="uploadProgress" style="margin-top: 10px; display: none;">
                     <progress value="0" max="100" style="width: 100%;"></progress>
+                </div>
+                <div class="modal-footer">
+                    <button class="admin-btn" onclick="uploadFile()">Загрузить</button>
+                    <button class="admin-btn delete" onclick="closeUploadFileModal()">Отмена</button>
                 </div>
             </div>
         </div>
@@ -945,6 +1112,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Логин</th>
+                        <th>Имя</th>
+                        <th>Фамилия</th>
                         <th>Статус</th>
                         <th>Дата регистрации</th>
                         <th>Последний вход</th>
@@ -953,7 +1122,7 @@
                 </thead>
                 <tbody id="studentsList">
                     <tr>
-                        <td colspan="6" style="text-align: center;">Загрузка...</td>
+                        <td colspan="8" style="text-align: center;">Загрузка...</td>
                     </tr>
                 </tbody>
             </table>
@@ -966,7 +1135,7 @@
                     👤
                 </div>
                 <div class="profile-title">
-                    <h2 id="profileName">Загрузка...</h2>
+                    <h2 id="profileFullName">Загрузка...</h2>
                     <p id="profileRole"></p>
                 </div>
             </div>
@@ -981,6 +1150,14 @@
                     <div class="info-item">
                         <span class="info-label">Логин:</span>
                         <span class="info-value" id="profileUsername">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Имя:</span>
+                        <span class="info-value" id="profileFirstName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Фамилия:</span>
+                        <span class="info-value" id="profileLastName">-</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Роль:</span>
@@ -1035,6 +1212,7 @@
         let students = [];
         let currentResetUserId = null;
         let editorInstance = null;
+        let editEditorInstance = null;
         let userProfile = null;
         let currentLessonFiles = [];
 
@@ -1062,6 +1240,128 @@
             } else {
                 setTimeout(checkCKEditorLoaded, 100);
             }
+        }
+
+        // Валидация имени
+        function validateName(input, errorElementId) {
+            const value = input.value.trim();
+            const errorDiv = document.getElementById(errorElementId);
+
+            if (value === '') {
+                errorDiv.classList.add('hidden');
+                input.classList.remove('input-error', 'input-success');
+                return true;
+            }
+
+            if (value.length > 100) {
+                errorDiv.textContent = 'Не может быть длиннее 100 символов';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            const validPattern = /^[a-zA-Zа-яА-ЯёЁ\s-]+$/;
+            if (!validPattern.test(value)) {
+                errorDiv.textContent = 'Может содержать только буквы, пробелы и дефисы';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            errorDiv.classList.add('hidden');
+            input.classList.remove('input-error');
+            input.classList.add('input-success');
+            return true;
+        }
+
+        // Валидация логина
+        function validateUsername(input, errorElementId) {
+            const value = input.value.trim();
+            const errorDiv = document.getElementById(errorElementId);
+
+            if (value.length < 3) {
+                errorDiv.textContent = 'Логин должен быть не короче 3 символов';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            if (value.length > 50) {
+                errorDiv.textContent = 'Логин не может быть длиннее 50 символов';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            const validPattern = /^[a-zA-Z0-9._-]+$/;
+            if (!validPattern.test(value)) {
+                errorDiv.textContent = 'Логин может содержать только латинские буквы, цифры, точки, дефисы и подчеркивания';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            errorDiv.classList.add('hidden');
+            input.classList.remove('input-error');
+            input.classList.add('input-success');
+            return true;
+        }
+
+        // Валидация пароля
+        function validatePassword(input, errorElementId, isOptional = false) {
+            const value = input.value;
+            const errorDiv = document.getElementById(errorElementId);
+
+            if (isOptional && value === '') {
+                errorDiv.classList.add('hidden');
+                input.classList.remove('input-error', 'input-success');
+                return true;
+            }
+
+            if (value.length < 6) {
+                errorDiv.textContent = 'Пароль должен быть не короче 6 символов';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            const hasLetter = /[a-zA-Zа-яА-Я]/.test(value);
+            const hasDigit = /\d/.test(value);
+
+            if (!hasLetter || !hasDigit) {
+                errorDiv.textContent = 'Пароль должен содержать хотя бы одну букву и одну цифру';
+                errorDiv.classList.remove('hidden');
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                return false;
+            }
+
+            errorDiv.classList.add('hidden');
+            input.classList.remove('input-error');
+            input.classList.add('input-success');
+            return true;
+        }
+
+        // Валидация подтверждения пароля
+        function validatePasswordConfirm(passwordId, confirmId, errorElementId) {
+            const password = document.getElementById(passwordId).value;
+            const confirm = document.getElementById(confirmId).value;
+            const errorDiv = document.getElementById(errorElementId);
+
+            if (password !== confirm) {
+                errorDiv.textContent = 'Пароли не совпадают';
+                errorDiv.classList.remove('hidden');
+                return false;
+            }
+
+            errorDiv.classList.add('hidden');
+            return true;
         }
 
         async function loadUserProfile() {
@@ -1139,7 +1439,8 @@
                 token = data.token;
                 currentUser = {
                     username: data.username,
-                    role: data.role
+                    role: data.role,
+                    id: data.id
                 };
 
                 localStorage.setItem('token', token);
@@ -1165,6 +1466,7 @@
             document.getElementById('app').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
             destroyEditor();
+            destroyEditEditor();
         }
 
         function destroyEditor() {
@@ -1176,6 +1478,17 @@
                 console.log('Ошибка при уничтожении редактора:', e);
             }
             editorInstance = null;
+        }
+
+        function destroyEditEditor() {
+            try {
+                if (CKEDITOR.instances && CKEDITOR.instances.editLessonContentInput) {
+                    CKEDITOR.instances.editLessonContentInput.destroy();
+                }
+            } catch (e) {
+                console.log('Ошибка при уничтожении редактора:', e);
+            }
+            editEditorInstance = null;
         }
 
         function showApp() {
@@ -1268,14 +1581,65 @@
             destroyEditor();
         }
 
+        function showEditLessonForm(lesson) {
+            document.getElementById('editLessonForm').classList.remove('hidden');
+            document.getElementById('editLessonId').value = lesson.id;
+            document.getElementById('editLessonTitleInput').value = lesson.title;
+            document.getElementById('editLessonMeetingLink').value = lesson.meetingLink || '';
+            document.getElementById('editLessonPublished').checked = lesson.isPublished;
+
+            // Устанавливаем содержимое в редактор после его инициализации
+            document.getElementById('editLessonContentInput').value = lesson.content;
+
+            setTimeout(() => {
+                initEditEditor();
+            }, 300);
+        }
+
+        function hideEditLessonForm() {
+            document.getElementById('editLessonForm').classList.add('hidden');
+            destroyEditEditor();
+        }
+
         function showCreateStudentForm() {
             document.getElementById('createStudentForm').classList.remove('hidden');
-            document.getElementById('studentUsername').value = '';
-            document.getElementById('studentPassword').value = '';
+            document.getElementById('createStudentUsername').value = '';
+            document.getElementById('createStudentFirstName').value = '';
+            document.getElementById('createStudentLastName').value = '';
+            document.getElementById('createStudentPassword').value = '';
+            document.getElementById('createStudentConfirmPassword').value = '';
+
+            // Скрываем ошибки
+            document.getElementById('createStudentFormError').classList.add('hidden');
+            document.getElementById('createStudentUsernameError').classList.add('hidden');
+            document.getElementById('createStudentFirstNameError').classList.add('hidden');
+            document.getElementById('createStudentLastNameError').classList.add('hidden');
+            document.getElementById('createStudentPasswordError').classList.add('hidden');
         }
 
         function hideCreateStudentForm() {
             document.getElementById('createStudentForm').classList.add('hidden');
+        }
+
+        function showEditStudentForm(student) {
+            document.getElementById('editStudentForm').classList.remove('hidden');
+            document.getElementById('editStudentId').value = student.id;
+            document.getElementById('editStudentUsername').value = student.username;
+            document.getElementById('editStudentFirstName').value = student.firstName || '';
+            document.getElementById('editStudentLastName').value = student.lastName || '';
+            document.getElementById('editStudentNewPassword').value = '';
+            document.getElementById('editStudentConfirmPassword').value = '';
+
+            // Скрываем ошибки
+            document.getElementById('editStudentFormError').classList.add('hidden');
+            document.getElementById('editStudentUsernameError').classList.add('hidden');
+            document.getElementById('editStudentFirstNameError').classList.add('hidden');
+            document.getElementById('editStudentLastNameError').classList.add('hidden');
+            document.getElementById('editStudentPasswordError').classList.add('hidden');
+        }
+
+        function hideEditStudentForm() {
+            document.getElementById('editStudentForm').classList.add('hidden');
         }
 
         function showResetPasswordModal(userId) {
@@ -1475,6 +1839,8 @@
 
             if (CKEDITOR.instances && CKEDITOR.instances.lessonContentInput) {
                 CKEDITOR.instances.lessonContentInput.insertHtml(html);
+            } else if (CKEDITOR.instances && CKEDITOR.instances.editLessonContentInput) {
+                CKEDITOR.instances.editLessonContentInput.insertHtml(html);
             }
 
             closeCodeModal();
@@ -1582,6 +1948,74 @@
             console.log('CKEditor 4 инициализирован с кнопкой для вставки кода');
         }
 
+        function initEditEditor() {
+            if (typeof CKEDITOR === 'undefined') {
+                console.log('CKEditor еще не загружен, повторная попытка...');
+                setTimeout(initEditEditor, 200);
+                return;
+            }
+
+            destroyEditEditor();
+
+            CKEDITOR.config.cloudServices_tokenUrl = null;
+            CKEDITOR.config.cloudServices_uploadUrl = null;
+
+            CKEDITOR.config.allowedContent = {
+                $1: {
+                    elements: CKEDITOR.dtd,
+                    attributes: true,
+                    classes: true,
+                    styles: true
+                }
+            };
+
+            CKEDITOR.dtd.$removeEmpty = {};
+
+            CKEDITOR.config.extraAllowedContent = 'pre[class,data-*]; code[class,data-*]; span[class]; div[class]';
+
+            CKEDITOR.plugins.add('codebutton', {
+                init: function (editor) {
+                    editor.ui.addButton('CodeButton', {
+                        label: 'Вставить код',
+                        icon: 'https://cdn.ckeditor.com/4.22.1/full-all/plugins/codesnippet/icons/codesnippet.png',
+                        command: 'showCodeModal',
+                        toolbar: 'insert'
+                    });
+                }
+            });
+
+            editEditorInstance = CKEDITOR.replace('editLessonContentInput', {
+                height: 400,
+                language: 'ru',
+                extraPlugins: 'codebutton',
+                removePlugins: 'exportpdf, cloudservices',
+                allowedContent: true,
+                extraAllowedContent: '*(*);*{*}',
+                autoParagraph: false,
+                fillEmptyBlocks: false,
+                toolbar: [
+                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'] },
+                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'] },
+                    { name: 'links', items: ['Link', 'Unlink'] },
+                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'CodeButton'] },
+                    { name: 'styles', items: ['Format', 'Font', 'FontSize'] },
+                    { name: 'colors', items: ['TextColor', 'BGColor'] },
+                    { name: 'tools', items: ['Maximize'] },
+                    { name: 'document', items: ['Source'] }
+                ],
+                format_tags: 'p;h1;h2;h3;h4;h5;h6;pre;address',
+                removeDialogTabs: 'image:advanced;link:advanced'
+            });
+
+            editEditorInstance.addCommand('showCodeModal', {
+                exec: function () {
+                    showCodeModal();
+                }
+            });
+
+            console.log('CKEditor 4 для редактирования инициализирован с кнопкой для вставки кода');
+        }
+
         async function createLesson() {
             if (!token) {
                 alert('Сессия истекла. Пожалуйста, войдите заново.');
@@ -1665,6 +2099,91 @@
             }
         }
 
+        async function updateLesson() {
+            if (!token) {
+                alert('Сессия истекла. Пожалуйста, войдите заново.');
+                logout();
+                return;
+            }
+
+            const id = document.getElementById('editLessonId').value;
+            const title = document.getElementById('editLessonTitleInput').value;
+
+            let content = '';
+            try {
+                if (CKEDITOR.instances && CKEDITOR.instances.editLessonContentInput) {
+                    content = CKEDITOR.instances.editLessonContentInput.getData();
+                } else {
+                    content = document.getElementById('editLessonContentInput').value;
+                }
+            } catch (e) {
+                console.error('Ошибка получения данных из редактора:', e);
+                content = document.getElementById('editLessonContentInput').value;
+            }
+
+            const meetingLink = document.getElementById('editLessonMeetingLink').value;
+            const isPublished = document.getElementById('editLessonPublished').checked;
+
+            if (!title || !title.trim()) {
+                alert('Введите название урока');
+                return;
+            }
+
+            if (!content || !content.trim()) {
+                alert('Введите содержание урока');
+                return;
+            }
+
+            const saveBtn = document.querySelector('#editLessonForm .admin-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Сохранение...';
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/lessons/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title.trim(),
+                        content: content,
+                        meetingLink: meetingLink || '',
+                        isPublished: isPublished
+                    })
+                });
+
+                if (response.status === 401) {
+                    throw new Error('Ошибка авторизации. Пожалуйста, войдите заново.');
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(errorData?.message || 'Ошибка обновления урока');
+                }
+
+                hideEditLessonForm();
+                await loadLessons();
+                if (selectedLessonId == id) {
+                    loadLesson(id);
+                }
+                alert('Урок успешно обновлён!');
+
+            } catch (error) {
+                console.error('Ошибка обновления урока:', error);
+                alert('Ошибка: ' + error.message);
+
+                if (error.message.includes('авторизации') || error.message.includes('401')) {
+                    logout();
+                }
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
         async function deleteLesson(id) {
             if (!confirm('Удалить урок?')) return;
 
@@ -1722,13 +2241,52 @@
         }
 
         async function createStudent() {
-            const username = document.getElementById('studentUsername').value;
-            const password = document.getElementById('studentPassword').value;
+            const username = document.getElementById('createStudentUsername').value.trim();
+            const password = document.getElementById('createStudentPassword').value;
+            const confirmPassword = document.getElementById('createStudentConfirmPassword').value;
+            const firstName = document.getElementById('createStudentFirstName').value.trim() || null;
+            const lastName = document.getElementById('createStudentLastName').value.trim() || null;
+            const errorDiv = document.getElementById('createStudentFormError');
 
-            if (!username || !password) {
-                alert('Заполните логин и пароль');
+            // Валидация
+            if (!username) {
+                errorDiv.textContent = 'Введите логин';
+                errorDiv.classList.remove('hidden');
                 return;
             }
+
+            if (!validateUsername(document.getElementById('createStudentUsername'), 'createStudentUsernameError')) {
+                return;
+            }
+
+            if (!password) {
+                errorDiv.textContent = 'Введите пароль';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!validatePassword(document.getElementById('createStudentPassword'), 'createStudentPasswordError')) {
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Пароли не совпадают';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (firstName && !validateName(document.getElementById('createStudentFirstName'), 'createStudentFirstNameError')) {
+                return;
+            }
+
+            if (lastName && !validateName(document.getElementById('createStudentLastName'), 'createStudentLastNameError')) {
+                return;
+            }
+
+            const saveBtn = document.querySelector('#createStudentForm .admin-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Создание...';
+            saveBtn.disabled = true;
 
             try {
                 const response = await fetch(`${API_URL}/admin/createuser`, {
@@ -1737,19 +2295,109 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        firstName: firstName || null,
+                        lastName: lastName || null
+                    })
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Ошибка создания ученика');
+                    throw new Error(data.message || 'Ошибка создания ученика');
                 }
 
                 hideCreateStudentForm();
                 loadStudents();
+                alert('Ученик успешно создан');
 
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        async function updateStudent() {
+            const id = document.getElementById('editStudentId').value;
+            const username = document.getElementById('editStudentUsername').value.trim();
+            const firstName = document.getElementById('editStudentFirstName').value.trim() || null;
+            const lastName = document.getElementById('editStudentLastName').value.trim() || null;
+            const newPassword = document.getElementById('editStudentNewPassword').value;
+            const confirmPassword = document.getElementById('editStudentConfirmPassword').value;
+            const errorDiv = document.getElementById('editStudentFormError');
+
+            // Валидация
+            if (!username) {
+                errorDiv.textContent = 'Введите логин';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!validateUsername(document.getElementById('editStudentUsername'), 'editStudentUsernameError')) {
+                return;
+            }
+
+            if (firstName && !validateName(document.getElementById('editStudentFirstName'), 'editStudentFirstNameError')) {
+                return;
+            }
+
+            if (lastName && !validateName(document.getElementById('editStudentLastName'), 'editStudentLastNameError')) {
+                return;
+            }
+
+            if (newPassword) {
+                if (!validatePassword(document.getElementById('editStudentNewPassword'), 'editStudentPasswordError', true)) {
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    errorDiv.textContent = 'Пароли не совпадают';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            const saveBtn = document.querySelector('#editStudentForm .admin-btn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Сохранение...';
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username,
+                        firstName: firstName || null,
+                        lastName: lastName || null,
+                        password: newPassword || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Ошибка обновления ученика');
+                }
+
+                hideEditStudentForm();
+                loadStudents();
+                alert('Данные ученика успешно обновлены');
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
             }
         }
 
@@ -1867,6 +2515,9 @@
 
                 if (currentUser?.role === 'admin') {
                     html += `
+                    <button class="edit-lesson-btn" onclick="event.stopPropagation(); showEditLessonForm(${JSON.stringify(lesson).replace(/"/g, '&quot;')})">
+                        ✏️
+                    </button>
                     <button class="delete-lesson-btn" data-id="${lesson.id}">
                         Удалить
                     </button>
@@ -1880,7 +2531,7 @@
 
             document.querySelectorAll('.lesson-item').forEach(item => {
                 item.addEventListener('click', function (e) {
-                    if (!e.target.classList.contains('delete-lesson-btn')) {
+                    if (!e.target.classList.contains('delete-lesson-btn') && !e.target.classList.contains('edit-lesson-btn')) {
                         const lessonId = this.dataset.lessonId;
                         if (lessonId) {
                             loadLesson(parseInt(lessonId));
@@ -1982,6 +2633,8 @@
                 document.body.appendChild(modal);
             }
 
+            const fullName = [student.lastName, student.firstName].filter(Boolean).join(' ') || student.username;
+
             const content = document.getElementById('studentProfileContent');
             content.innerHTML = `
                 <div class="profile-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
@@ -1989,8 +2642,9 @@
                         👤
                     </div>
                     <div>
-                        <h3 style="color: #333; margin-bottom: 5px;">${student.username}</h3>
+                        <h3 style="color: #333; margin-bottom: 5px;">${fullName}</h3>
                         <p><span class="role-badge role-user">Ученик</span></p>
+                        <p style="color: #666; font-size: 0.9rem;">Логин: ${student.username}</p>
                     </div>
                 </div>
                 
@@ -2000,6 +2654,14 @@
                         <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
                             <span style="color: #666;">ID:</span>
                             <span style="font-weight: 600;">${student.id}</span>
+                        </div>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                            <span style="color: #666;">Имя:</span>
+                            <span style="font-weight: 600;">${student.firstName || '—'}</span>
+                        </div>
+                        <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+                            <span style="color: #666;">Фамилия:</span>
+                            <span style="font-weight: 600;">${student.lastName || '—'}</span>
                         </div>
                         <div class="info-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
                             <span style="color: #666;">Статус:</span>
@@ -2021,6 +2683,7 @@
                 </div>
                 
                 <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="admin-btn" onclick="showEditStudentForm(${JSON.stringify(student).replace(/"/g, '&quot;')}); closeStudentProfile();">✏️ Редактировать</button>
                     <button class="admin-btn" onclick="showResetPasswordModal(${student.id}); closeStudentProfile();">Сбросить пароль</button>
                     ${student.isActive ?
                     `<button class="admin-btn delete" onclick="blockStudent(${student.id}); closeStudentProfile();">Заблокировать</button>` :
@@ -2044,37 +2707,46 @@
             const list = document.getElementById('studentsList');
 
             if (students.length === 0) {
-                list.innerHTML = '<tr><td colspan="6" style="text-align: center;">Нет учеников</td></tr>';
+                list.innerHTML = '<tr><td colspan="8" style="text-align: center;">Нет учеников</td></tr>';
                 return;
             }
 
-            list.innerHTML = students.map(student => `
+            list.innerHTML = students.map(student => {
+                const fullName = [student.lastName, student.firstName].filter(Boolean).join(' ');
+                return `
                 <tr onclick="loadStudentProfile(${student.id})" style="cursor: pointer;">
                     <td>${student.id}</td>
                     <td>${student.username}</td>
+                    <td>${student.firstName || '—'}</td>
+                    <td>${student.lastName || '—'}</td>
                     <td class="${student.isActive ? 'student-active' : 'student-inactive'}">
                         ${student.isActive ? 'Активен' : 'Заблокирован'}
                     </td>
                     <td>${new Date(student.createdAt).toLocaleDateString()}</td>
                     <td>${student.lastLoginAt ? new Date(student.lastLoginAt).toLocaleString() : 'Никогда'}</td>
                     <td class="student-actions" onclick="event.stopPropagation();">
+                        <button class="admin-btn" style="background: #f39c12;" onclick="showEditStudentForm(${JSON.stringify(student).replace(/"/g, '&quot;')})">✏️</button>
                         ${student.isActive ?
-                    `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
-                    `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
-                }
+                        `<button class="admin-btn delete" onclick="blockStudent(${student.id})">Заблокировать</button>` :
+                        `<button class="admin-btn success" onclick="unblockStudent(${student.id})">Разблокировать</button>`
+                    }
                         <button class="admin-btn" onclick="showResetPasswordModal(${student.id})">Сброс пароля</button>
                         <button class="admin-btn delete" onclick="deleteStudent(${student.id})">Удалить</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function renderProfile() {
             if (!userProfile) return;
 
-            document.getElementById('profileName').textContent = userProfile.username;
+            const fullName = [userProfile.lastName, userProfile.firstName].filter(Boolean).join(' ') || userProfile.username;
+
+            document.getElementById('profileFullName').textContent = fullName;
             document.getElementById('profileId').textContent = userProfile.id;
             document.getElementById('profileUsername').textContent = userProfile.username;
+            document.getElementById('profileFirstName').textContent = userProfile.firstName || '—';
+            document.getElementById('profileLastName').textContent = userProfile.lastName || '—';
 
             const roleElement = document.getElementById('profileRole');
             const roleValueElement = document.getElementById('profileRoleValue');
@@ -2102,6 +2774,12 @@
                 document.getElementById('statsRead').textContent = lessons.length;
             } else {
                 document.getElementById('statsRead').textContent = Math.floor(Math.random() * lessons.length);
+            }
+
+            // Обновляем отображение полного имени в шапке
+            const fullNameDisplay = document.getElementById('userFullNameDisplay');
+            if (fullNameDisplay) {
+                fullNameDisplay.textContent = fullName !== userProfile.username ? `(${fullName})` : '';
             }
         }
 

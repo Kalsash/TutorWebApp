@@ -70,6 +70,9 @@ namespace TutorApi.Controllers
                 {
                     u.Id,
                     u.Username,
+                    u.FirstName,
+                    u.LastName,
+                    u.FullName,
                     u.Role,
                     u.CreatedAt,
                     u.LastLoginAt

@@ -14,6 +14,9 @@ namespace TutorApi.Models
         [Url]
         public string? MeetingLink { get; set; } // ссылка на Яндекс Телемост
 
+        [Url]
+        public string? BoardLink { get; set; } // ссылка на Яндекс Телемост
+
         public bool IsPublished { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
