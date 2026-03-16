@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TutorApi.Data;
 using TutorApi.Models;
 using Microsoft.EntityFrameworkCore;
+using TutorWebApp.Services;
 
 namespace TutorApi.Controllers
 {
@@ -13,9 +14,12 @@ namespace TutorApi.Controllers
     {
         private readonly AppDbContext _context;
 
-        public AdminController(AppDbContext context)
+        private readonly IValidationService _validationService;
+
+        public AdminController(AppDbContext context, IValidationService validationService)
         {
             _context = context;
+            _validationService = validationService;
         }
 
         public class CreateUserRequest
@@ -30,6 +34,16 @@ namespace TutorApi.Controllers
         [HttpPost("createuser")]
         public async Task<IActionResult> CreateUser(CreateUserRequest request)
         {
+            // Валидация username
+            var usernameValidation = _validationService.ValidateUsername(request.Username);
+            if (!usernameValidation.IsValid)
+                return BadRequest(new { message = usernameValidation.ErrorMessage });
+
+            // Валидация пароля (при создании пользователя требуем сложный пароль)
+            var passwordValidation = _validationService.ValidateNewPassword(request.Password, isReset: false);
+            if (!passwordValidation.IsValid)
+                return BadRequest(new { message = passwordValidation.ErrorMessage });
+
             // Проверяем, не занят ли логин
             var existingUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -41,7 +55,7 @@ namespace TutorApi.Controllers
             {
                 Username = request.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Role = "user", // Все новые пользователи - обычные ученики
+                Role = "user",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -166,10 +180,12 @@ namespace TutorApi.Controllers
         /// Сбросить пароль ученика (админ задаёт новый пароль)
         /// </summary>
         [HttpPost("users/{id}/reset-password")]
-        public async Task<IActionResult> ResetPassword(int id, [FromBody] string newPassword)
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordRequest request)
         {
-            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 3)
-                return BadRequest(new { message = "Пароль должен быть не менее 3 символов" });
+            // Валидация пароля с флагом isReset = true (менее строгие требования)
+            var passwordValidation = _validationService.ValidateNewPassword(request.NewPassword, isReset: true);
+            if (!passwordValidation.IsValid)
+                return BadRequest(new { message = passwordValidation.ErrorMessage });
 
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == id && u.Role == "user");
@@ -177,10 +193,15 @@ namespace TutorApi.Controllers
             if (user == null)
                 return NotFound(new { message = "Ученик не найден" });
 
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Пароль успешно сброшен" });
+        }
+
+        public class ResetPasswordRequest
+        {
+            public string NewPassword { get; set; } = string.Empty;
         }
     }
 }

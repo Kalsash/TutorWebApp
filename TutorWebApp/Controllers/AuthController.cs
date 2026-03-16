@@ -7,6 +7,7 @@ using System.Text;
 using TutorApi.Data;
 using TutorApi.Models;
 using Microsoft.EntityFrameworkCore;
+using TutorWebApp.Services;
 
 namespace TutorApi.Controllers
 {
@@ -17,10 +18,13 @@ namespace TutorApi.Controllers
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
 
-        public AuthController(AppDbContext context, IConfiguration configuration)
+        private readonly IValidationService _validationService;
+
+        public AuthController(AppDbContext context, IConfiguration configuration, IValidationService validationService)
         {
             _context = context;
             _configuration = configuration;
+            _validationService = validationService;
         }
 
         public class LoginRequest
@@ -88,6 +92,11 @@ namespace TutorApi.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
+            // Валидация нового пароля
+            var passwordValidation = _validationService.ValidateNewPassword(request.NewPassword, isReset: false);
+            if (!passwordValidation.IsValid)
+                return BadRequest(new { message = passwordValidation.ErrorMessage });
+
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
@@ -100,7 +109,6 @@ namespace TutorApi.Controllers
 
             return Ok(new { message = "Пароль успешно изменён" });
         }
-
         private string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
