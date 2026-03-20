@@ -2,36 +2,136 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "master" ]  
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --no-restore -c Release
+      
+      - name: Run tests
+        run: dotnet test --no-build -c Release --verbosity normal
+      
+      - name: Run integration tests
+        run: |
+          docker run -d --name postgres-test -e POSTGRES_PASSWORD=test123 -e POSTGRES_DB=testdb -p 5433:5432 postgres:15
+          sleep 10
+          dotnet test --filter "Category=Integration" --verbosity normal
+        continue-on-error: true 
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            **/TestResults/
+            **/test-results.xml
 
+  code-quality:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Run Roslyn analyzers
+        run: dotnet build -c Release -warnaserror
+      
+      - name: Run tests with coverage
+        run: |
+          dotnet test -c Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage
+
+  # 3. СБОРКА DOCKER - только если тесты прошли
+  build-and-push:
+    needs: [test, code-quality]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./TutorWebApp        
+          context: ./TutorWebApp
           file: ./TutorWebApp/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/tutor-web-app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build and push with version tag
+        uses: docker/build-push-action@v6
+        with:
+          context: ./TutorWebApp
+          file: ./TutorWebApp/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/tutor-web-app:${{ github.sha }}
 
+  # 4. ДЕПЛОЙ - только после успешной сборки
   deploy-to-render:
-    needs: build-and-push  
+    needs: build-and-push
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
     steps:
       - name: Trigger Render deploy
         run: |
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+      
+      - name: Wait for deployment
+        run: sleep 30
+      
+      - name: Verify health endpoint
+        run: |
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+            curl -f https://your-app.onrender.com/health && break
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            echo "Waiting for app to be ready... ($RETRY_COUNT/$MAX_RETRIES)"
+            sleep 10
+          done
+          if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+            echo "Health check failed"
+            exit 1
+          fi
