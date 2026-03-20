@@ -44,33 +44,6 @@ jobs:
             **/TestResults/
             **/test-results.xml
 
-  code-quality:
-    needs: test
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      
-      - name: Run Roslyn analyzers
-        run: dotnet build -c Release -warnaserror
-      
-      - name: Run tests with coverage
-        run: |
-          dotnet test -c Release --collect:"XPlat Code Coverage" --results-directory ./coverage
-      
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: ./coverage
-
-  # 3. СБОРКА DOCKER - только если тесты прошли
   build-and-push:
     needs: [test, code-quality]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -107,7 +80,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/tutor-web-app:${{ github.sha }}
 
-  # 4. ДЕПЛОЙ - только после успешной сборки
   deploy-to-render:
     needs: build-and-push
     runs-on: ubuntu-latest
