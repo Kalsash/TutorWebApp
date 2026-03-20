@@ -11,7 +11,7 @@ using TutorApi.Controllers;
 using TutorApi.Data;
 using TutorApi.Models;
 using TutorWebApp.Services;
-using Newtonsoft.Json.Linq; // Добавьте этот using
+using Newtonsoft.Json.Linq; 
 
 namespace Tests
 {
