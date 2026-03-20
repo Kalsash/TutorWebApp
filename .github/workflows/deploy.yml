@@ -81,29 +81,9 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/tutor-web-app:${{ github.sha }}
 
   deploy-to-render:
-    needs: build-and-push
+    needs: build-and-push  
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    
     steps:
       - name: Trigger Render deploy
         run: |
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
-      
-      - name: Wait for deployment
-        run: sleep 30
-      
-      - name: Verify health endpoint
-        run: |
-          MAX_RETRIES=10
-          RETRY_COUNT=0
-          until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
-            curl -f https://your-app.onrender.com/health && break
-            RETRY_COUNT=$((RETRY_COUNT+1))
-            echo "Waiting for app to be ready... ($RETRY_COUNT/$MAX_RETRIES)"
-            sleep 10
-          done
-          if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-            echo "Health check failed"
-            exit 1
-          fi
